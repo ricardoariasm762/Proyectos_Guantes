@@ -1,32 +1,80 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
+// Configuración central de rutas y protección de navegación
+// Universidad Cooperativa de Colombia - Campus Pasto
+
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AppLayout from './components/layout/AppLayout';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Tutorial3D from './pages/Tutorial3D';
 import PracticaGuiada from './pages/PracticaGuiada';
 import SimulacionInteractiva from './pages/SimulacionInteractiva';
 import ModoDesafio from './pages/ModoDesafio';
-import Login from './pages/Login';
+import Perfil from './pages/Perfil';
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="app-container">
-        <Navbar />
-        <div className="main-layout">
-          <Sidebar />
-          <main className="content">
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/tutorial3d" element={<Tutorial3D />} />
-              <Route path="/practica-guiada" element={<PracticaGuiada />} />
-              <Route path="/simulacion" element={<SimulacionInteractiva />} />
-              <Route path="/desafio" element={<ModoDesafio />} />
-            </Routes>
-          </main>
-        </div>
-      </div>
+      <Routes>
+        <Route element={<AppLayout />}>
+          {/* Ruta pública de acceso */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Rutas protegidas para estudiantes autenticados */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tutorial3d"
+            element={
+              <ProtectedRoute>
+                <Tutorial3D />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/practica-guiada"
+            element={
+              <ProtectedRoute>
+                <PracticaGuiada />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/simulacion"
+            element={
+              <ProtectedRoute>
+                <SimulacionInteractiva />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/desafio"
+            element={
+              <ProtectedRoute>
+                <ModoDesafio />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/perfil"
+            element={
+              <ProtectedRoute>
+                <Perfil />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Redirección por defecto para rutas no encontradas */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }
