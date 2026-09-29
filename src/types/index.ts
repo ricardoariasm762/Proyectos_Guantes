@@ -50,3 +50,6 @@ export interface ErrorComun {
   gravedad: 'critica' | 'moderada' | 'leve';
   penalizacionPuntaje: number;
 }
+
+export * from './mediapipe';
+

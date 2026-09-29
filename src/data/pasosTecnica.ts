@@ -84,3 +84,74 @@ export const PASOS_TECNICA: Paso[] = [
     consejoAsepsia: 'Mantener las manos entre la cintura y el pecho con los codos pegados al tórax en posición de descanso estéril.',
   },
 ];
+
+import type { PasoSimulacion } from '../types/mediapipe';
+import {
+  validarPaso1Lavado,
+  validarPaso2Secado,
+  validarPaso3TomarGuanteDerecho,
+  validarPaso4IntroducirManoDerecha,
+  validarPaso5RepetirManoIzquierda,
+  validarPaso6AjustarPunos,
+} from '../utils/validacionTecnica';
+
+/**
+ * Pasos estructurados para el módulo de simulación por visión artificial con MediaPipe
+ */
+export const PASOS_SIMULACION_VISION: PasoSimulacion[] = [
+  {
+    id: 1,
+    numero: 1,
+    titulo: 'Lavado quirúrgico de manos',
+    instruccion: 'Muestra ambas manos elevadas y entrecruza los dedos frotando palmas y espacios interdigitales.',
+    tiempoEstimadoSegundos: 45,
+    consejoAsepsia: 'Mantén siempre las manos por encima del nivel de los codos.',
+    validar: (manos) => validarPaso1Lavado(manos),
+  },
+  {
+    id: 2,
+    numero: 2,
+    titulo: 'Secado con compresa estéril',
+    instruccion: 'Coloca ambas manos abiertas con todos los dedos completamente extendidos (> 160°).',
+    tiempoEstimadoSegundos: 30,
+    consejoAsepsia: 'Seca en sentido distal a proximal sin regresar a zonas ya secadas.',
+    validar: (manos) => validarPaso2Secado(manos),
+  },
+  {
+    id: 3,
+    numero: 3,
+    titulo: 'Tomar guante derecho por el borde doblado',
+    instruccion: 'Haz pinza con el pulgar e índice de la mano izquierda sobre el doblez interno.',
+    tiempoEstimadoSegundos: 25,
+    consejoAsepsia: 'Toca exclusivamente la cara interna del puño doblado con la mano desnuda.',
+    validar: (manos, handedness) => validarPaso3TomarGuanteDerecho(manos, handedness),
+  },
+  {
+    id: 4,
+    numero: 4,
+    titulo: 'Introducir mano derecha sin tocar exterior',
+    instruccion: 'Mano derecha extendida con dedos juntos en forma de pala quirúrgica para calzar.',
+    tiempoEstimadoSegundos: 35,
+    consejoAsepsia: 'No toques el exterior estéril con la mano izquierda ni permitas que la piel roce el látex externo.',
+    validar: (manos, handedness) => validarPaso4IntroducirManoDerecha(manos, handedness),
+  },
+  {
+    id: 5,
+    numero: 5,
+    titulo: 'Repetir con mano izquierda (Bolsillo estéril)',
+    instruccion: 'Mano derecha enguantada formando el bolsillo estéril bajo el puño doblado izquierdo.',
+    tiempoEstimadoSegundos: 40,
+    consejoAsepsia: 'Estéril con estéril. Mantén el pulgar derecho abducido para no tocar la piel de la muñeca.',
+    validar: (manos, handedness) => validarPaso5RepetirManoIzquierda(manos, handedness),
+  },
+  {
+    id: 6,
+    numero: 6,
+    titulo: 'Ajustar puños manteniendo esterilidad',
+    instruccion: 'Muestra ambas manos enguantadas extendidas al nivel del pecho y verifica el ajuste.',
+    tiempoEstimadoSegundos: 30,
+    consejoAsepsia: 'Mantén las manos entre la cintura y el pecho en posición de descanso estéril.',
+    validar: (manos) => validarPaso6AjustarPunos(manos),
+  },
+];
+

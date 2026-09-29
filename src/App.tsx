@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Tutorial3D from './pages/Tutorial3D';
 import PracticaGuiada from './pages/PracticaGuiada';
 import SimulacionInteractiva from './pages/SimulacionInteractiva';
+import SimulacionCamaraPage from './pages/SimulacionCamaraPage';
 import ModoDesafio from './pages/ModoDesafio';
 import Perfil from './pages/Perfil';
 
@@ -54,6 +55,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/simulacion-camara"
+            element={
+              <ProtectedRoute>
+                <SimulacionCamaraPage />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/desafio"
             element={

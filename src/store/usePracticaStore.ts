@@ -13,6 +13,7 @@ interface PracticaState {
 
   iniciarPractica: () => void;
   completarPaso: (num: number) => void;
+  avanzarPaso: () => void;
   registrarError: (motivo?: string) => void;
   finalizarPractica: () => { tiempoSegundos: number; puntaje: number };
   reiniciarPractica: () => void;
@@ -48,6 +49,11 @@ export const usePracticaStore = create<PracticaState>((set, get) => ({
         pasoActual: siguientePaso,
       };
     });
+  },
+
+  avanzarPaso: () => {
+    const { pasoActual, completarPaso } = get();
+    completarPaso(pasoActual);
   },
 
   registrarError: (motivo = 'Violación de asepsia') => {

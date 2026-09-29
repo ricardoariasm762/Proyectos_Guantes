@@ -8,6 +8,7 @@ import {
   Box,
   ClipboardCheck,
   HandMetal,
+  Camera,
   Trophy,
   User,
   Sparkles,
@@ -39,10 +40,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
       badge: null,
     },
     {
+      to: '/simulacion-camara',
+      label: 'Simulación Cámara IA',
+      icon: Camera,
+      badge: 'MediaPipe',
+    },
+    {
       to: '/simulacion',
       label: 'Simulación Drag & Drop',
       icon: HandMetal,
-      badge: 'Interactivo',
+      badge: '2D',
     },
     {
       to: '/desafio',

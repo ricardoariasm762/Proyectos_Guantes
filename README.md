@@ -37,19 +37,28 @@ La herramienta proporciona una experiencia inmersiva libre de riesgos, con retro
    - Temporizador activo en vivo, barra de avance porcentual y registro didáctico de dudas o infracciones.
    - Cálculo automático de puntaje y celebración con confeti al finalizar.
 
-5. **🖐️ Simulación Interactiva Háptica (Drag & Drop):**
+5. **🖐️ Simulación Interactiva Háptica (Drag & Drop 2D):**
    - Espacio de trabajo delimitado por **Campo Quirúrgico Estéril** (zona segura esmeralda) y **Borde Contaminado / Suelo** (zonas de peligro carmesí).
    - Arrastre fluido con **@dnd-kit/core** de guantes e insumos.
    - Detección inmediata de colisiones asépticas con retroalimentación sonora sintetizada mediante **Web Audio API** (sin dependencias de archivos externos).
    - Cálculo de porcentaje de precisión en tiempo real.
 
-6. **🏆 Modo Desafío (Evaluación Contrarreloj):**
+6. **👁️ Módulo de Visión Artificial en Tiempo Real (MediaPipe Hands):**
+   - **Procesamiento 100% Client-Side:** Inferencia local en WebAssembly y aceleración WebGL GPU sin envío de video a servidores externos, garantizando el principio ético de privacidad estricta.
+   - **Detección Biomecánica:** Extracción y seguimiento continuo de 21 landmarks tridimensionales por mano a 30 FPS.
+   - **Filtro de Suavizado SMA + EMA:** Búfer de ventana móvil ($N=5$) y Media Móvil Exponencial ($\alpha=0.65$) para eliminar el temblor (*jitter*) en la detección.
+   - **Motor de Validación de 6 Pasos:** Verificación automática de lavado, secado, pinza en doblez interno, mano en pala para inserción, bolsillo estéril y ajuste simétrico de puños.
+   - **Avance Automático:** Transición al siguiente paso al mantener la postura correcta durante 1.5 segundos consecutivos.
+   - **Penalización por Falla Sostenida:** Registro de error cada 3.0 segundos acumulados de postura incorrecta o violación de límites.
+   - **Sincronización REST con Spring Boot:** Envío automático del intento a `POST http://localhost:8080/api/intentos` con token JWT (`Authorization: Bearer`), y persistencia de respaldo en Zustand/localStorage.
+
+7. **🏆 Modo Desafío (Evaluación Contrarreloj):**
    - Examen práctico con cuenta regresiva de **5:00 minutos**.
    - Escenarios clínicos de toma de decisión rápida sin ayudas visuales.
    - Cálculo ponderado con bonificación de velocidad y penalizaciones por contaminación.
    - **Leaderboard local** con el cuadro de honor de las mejores marcas del estudiante.
 
-7. **👤 Perfil del Estudiante e Historial Editable:**
+8. **👤 Perfil del Estudiante e Historial Editable:**
    - Ficha del estudiante con opción de modificación de nombre, semestre y grupo.
    - Historial detallado con filtros por modalidad (`Guiado`, `Simulación`, `Desafío`).
    - Capacidad de eliminar intentos individuales y reinicio general del progreso con confirmación.
@@ -61,14 +70,17 @@ La herramienta proporciona una experiencia inmersiva libre de riesgos, con retro
 | Capa | Tecnologías |
 | :--- | :--- |
 | **Núcleo Frontend** | React 19, TypeScript, Vite |
+| **Visión por Computador** | `@mediapipe/tasks-vision` (HandLandmarker en modo VIDEO con WebGL/CPU) |
 | **Enrutamiento** | React Router DOM v7 |
 | **Estado Global y Persistencia** | Zustand con middleware `persist` (`localStorage`) |
+| **Backend REST & Seguridad** | Java Spring Boot (`http://localhost:8080`), Autenticación JWT Bearer |
 | **Gráficos 3D** | Three.js, `@react-three/fiber`, `@react-three/drei` |
 | **Interactividad Drag & Drop** | `@dnd-kit/core`, `@dnd-kit/utilities` |
 | **Visualización de Datos** | Recharts (Responsive Area Chart) |
 | **Formularios y Validación** | React Hook Form, Zod, `@hookform/resolvers` |
-| **Audio Feedback** | Web Audio API (sintetizador de frecuencias C5/E5/G5 y buzzer) |
-| **Iconografía y Estética** | Lucide React, Paleta Médica Salud UCC (#023E8A, #0077B6, #00B4D8, #CAF0F8) |
+| **Audio Feedback** | Web Audio API (sintetizador de acordes C5/E5/G5 y alarmas asépticas) |
+| **Efectos Visuales** | `canvas-confetti` |
+| **Iconografía y Estética** | Lucide React, Paleta Quirúrgica (#0077B6, #00B4D8, #F0F4F8, #10B981) |
 
 ---
 
@@ -77,7 +89,6 @@ La herramienta proporciona una experiencia inmersiva libre de riesgos, con retro
 ```text
 herramienta-guantes/
 ├── public/
-│   └── favicon.svg
 ├── src/
 │   ├── assets/
 │   ├── components/
@@ -90,17 +101,22 @@ herramienta-guantes/
 │   │   │   └── Footer.tsx
 │   │   ├── three/
 │   │   │   └── SurgicalScene.tsx
-│   │   └── ui/
-│   │       ├── Badge.tsx
-│   │       ├── Card.tsx
-│   │       ├── Modal.tsx
-│   │       ├── ProgressBar.tsx
-│   │       └── StatCard.tsx
+│   │   ├── ui/
+│   │   │   ├── Badge.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── ProgressBar.tsx
+│   │   │   └── StatCard.tsx
+│   │   ├── ControlesSimulacion.tsx   # Botonera de control (Iniciar, Pausar, Reiniciar, Guardar)
+│   │   ├── PanelFeedback.tsx         # Panel lateral con métricas en tiempo real y pasos
+│   │   ├── SimulacionCamara.tsx      # Orquestador principal de la práctica con cámara
+│   │   └── VideoCanvas.tsx           # Video en espejo + overlay de 21 landmarks en Canvas
 │   ├── data/
 │   │   ├── erroresComunes.ts
-│   │   ├── pasosTecnica.ts
+│   │   ├── pasosTecnica.ts           # Protocolo clínico y reglas PASOS_SIMULACION_VISION
 │   │   └── zonasSensibles.ts
 │   ├── hooks/
+│   │   ├── useHandTracking.ts        # Ciclo de vida de MediaPipe + cámara web a 30 FPS
 │   │   └── useTimer.ts
 │   ├── pages/
 │   │   ├── Dashboard.tsx
@@ -108,18 +124,24 @@ herramienta-guantes/
 │   │   ├── ModoDesafio.tsx
 │   │   ├── Perfil.tsx
 │   │   ├── PracticaGuiada.tsx
+│   │   ├── SimulacionCamaraPage.tsx  # Vista de simulación por visión y sync con Spring Boot
 │   │   ├── SimulacionInteractiva.tsx
 │   │   └── Tutorial3D.tsx
 │   ├── store/
 │   │   ├── useAuthStore.ts
-│   │   ├── usePracticaStore.ts
-│   │   └── useProgresoStore.ts
+│   │   ├── usePracticaStore.ts       # Máquina de estados en memoria (avanzarPaso, errores)
+│   │   └── useProgresoStore.ts       # Historial de intentos con persistencia local
 │   ├── types/
-│   │   └── index.ts
+│   │   ├── index.ts
+│   │   └── mediapipe.ts              # Tipos 3D, lateralidad, landmarks y validación
 │   ├── utils/
-│   │   ├── puntuacion.ts
-│   │   └── sound.ts
-│   ├── App.tsx
+│   │   ├── api.ts                   # Cliente HTTP REST con inyección de JWT Bearer
+│   │   ├── geometria.ts             # Cálculos euclidianos 3D, ángulos de articulación
+│   │   ├── puntuacion.ts            # Fórmulas de puntaje clínico y formateo
+│   │   ├── sound.ts                 # Sintetizador Web Audio API
+│   │   ├── suavizado.ts             # Filtro híbrido SMA + EMA para landmarks
+│   │   └── validacionTecnica.ts     # Motor de validación de los 6 pasos
+│   ├── App.tsx                      # Rutas protegidas (incluye /simulacion-camara)
 │   ├── index.css
 │   └── main.tsx
 ├── index.html
@@ -135,6 +157,7 @@ herramienta-guantes/
 ### Prerrequisitos
 - **Node.js**: v18.0.0 o superior (recomendado v20+ o v22+).
 - **npm**: v9+ o superior.
+- **Backend (Opcional pero recomendado)**: Spring Boot activo en `http://localhost:8080`.
 
 ### 1. Clonar o acceder al repositorio
 ```bash
@@ -164,22 +187,17 @@ npm run lint
 
 ---
 
-## 🔮 Hoja de Ruta para Integraciones Futuras
+## 🔒 Consideraciones Éticas, Privacidad y Limitaciones
 
-### 1. Integración con Backend (Firebase)
-- **Firebase Authentication:**
-  - Sustituir la función `login()` de `useAuthStore` por `signInWithEmailAndPassword` o autenticación institucional vía Google Workspace UCC.
-  - Manejo de roles: `estudiante` y `docente_evaluador`.
-- **Cloud Firestore:**
-  - Crear colección `intentos_practica` para almacenar de forma centralizada los intentos de cada estudiante.
-  - Sincronización en tiempo real con `onSnapshot` para que los docentes consulten el tablero analítico de la cohorte.
+### Privacidad y Protección de Datos
+- **100% Local:** Todo el procesamiento de imágenes ocurre dentro de la memoria RAM del navegador del estudiante a través de WebAssembly.
+- **Sin Transmisión de Video:** Ningún fotograma ni flujo de video sale del dispositivo ni se transmite a servidores externos.
+- Solo los datos numéricos consolidados del intento (tiempo total, número de errores, pasos aprobados y puntaje calculado) se envían a la base de datos del proyecto de investigación.
 
-### 2. Integración con Visión por Computador (Google MediaPipe Hands)
-- **Detección por Cámara Web:**
-  - El simulador ya cuenta con la arquitectura modular preparada para recibir landmarks de manos.
-  - Integrar `@mediapipe/tasks-vision` para capturar los 21 puntos anatómicos clave de las manos en vivo.
-  - Detección de altura relativa: validar que las muñecas y dedos no desciendan por debajo del límite de la cintura ni de los codos.
-  - Detección de proximidad: calcular la distancia euclidiana entre el pulgar dominante y la piel de la muñeca contralateral para alertar de contaminación en tiempo real antes de tocar.
+### Limitaciones Conocidas del Modelo de Visión
+1. **Condiciones de Iluminación:** Ambientes con contraluz severo o iluminación deficiente (< 100 lux) pueden provocar pérdida momentánea de landmarks (el sistema detecta esto y muestra una alerta amarilla de iluminación).
+2. **Oclusión Completa:** Si una mano cubre enteramente a la otra durante un ángulo no frontal, MediaPipe puede inferir temporalmente una sola mano. Se recomienda mantener las manos elevadas y orientadas hacia la cámara.
+3. **Hardware sin Aceleración WebGL:** En navegadores muy antiguos sin soporte WebGL, el detector automáticamente activa el modo CPU de respaldo, pudiendo experimentar una reducción en la tasa de FPS (el sistema adapta dinámicamente la resolución a 320x240 para compensar).
 
 ---
 

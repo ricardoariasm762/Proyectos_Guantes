@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Box,
   HandMetal,
+  Camera,
   Trophy,
   Activity,
   Calendar,
@@ -261,6 +262,25 @@ const Dashboard: React.FC = () => {
         </h3>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+          <div
+            className="card-container card-hover-effect"
+            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.75rem', border: '1.5px solid #BAE6FD' }}
+            onClick={() => navigate('/simulacion-camara')}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: '#E0F2FE', color: '#0077B6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Camera size={22} />
+              </div>
+              <div>
+                <h4 style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>Simulación Cámara IA</h4>
+                <span style={{ fontSize: '0.75rem', color: '#0284C7', fontWeight: 600 }}>MediaPipe Hands • Visión en vivo</span>
+              </div>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+              Practica frente a la cámara web. La IA evalúa la postura de tus manos en tiempo real sin enviar video a ningún servidor.
+            </p>
+          </div>
+
           <div
             className="card-container card-hover-effect"
             style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
