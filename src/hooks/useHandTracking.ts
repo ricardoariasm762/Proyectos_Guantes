@@ -199,15 +199,17 @@ export function useHandTracking(opciones: OpcionesHandTracking = {}): UseHandTra
                   actualMunica.y - anteriorMunica.y
                 );
                 // Si la muñeca salta más de 30% del encuadre en 33ms, suele ser pérdida por baja luz
-                setAlertaIluminacion(desplazamiento > 0.3);
+                const esAlerta = desplazamiento > 0.3;
+                setAlertaIluminacion((prev) => (prev === esAlerta ? prev : esAlerta));
               }
             }
             anterioresLandmarksRef.current = manosSuavizadas;
           } else {
-            setLandmarks([]);
-            setHandedness([]);
+            // Mantener identidad de referencia si ya estaba vacío para evitar Maximum update depth exceeded
+            setLandmarks((prev) => (prev.length === 0 ? prev : []));
+            setHandedness((prev) => (prev.length === 0 ? prev : []));
             anterioresLandmarksRef.current = [];
-            setAlertaIluminacion(false);
+            setAlertaIluminacion((prev) => (prev ? false : prev));
           }
 
           // 3. Cálculo de FPS reales y adaptación de rendimiento si cae por debajo de 20 FPS
@@ -215,7 +217,7 @@ export function useHandTracking(opciones: OpcionesHandTracking = {}): UseHandTra
           const deltaSegundos = (ahora - tiempoInicioFpsRef.current) / 1000;
           if (deltaSegundos >= 1.0) {
             const fpsCalculados = Math.round(conteoFramesRef.current / deltaSegundos);
-            setFps(fpsCalculados);
+            setFps((prev) => (prev === fpsCalculados ? prev : fpsCalculados));
             conteoFramesRef.current = 0;
             tiempoInicioFpsRef.current = ahora;
 

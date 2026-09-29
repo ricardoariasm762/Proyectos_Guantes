@@ -174,18 +174,32 @@ export const SimulacionCamara: React.FC<SimulacionCamaraProps> = ({ onIntentoGua
 
     // Si aún no hay detección, esperar
     if (!landmarks || landmarks.length === 0) {
-      setResultadoValidacion({
-        correcto: false,
-        mensaje: 'Coloca tus manos frente a la cámara dentro del encuadre.',
+      setResultadoValidacion((prev) => {
+        if (!prev?.correcto && prev?.mensaje === 'Coloca tus manos frente a la cámara dentro del encuadre.') {
+          return prev;
+        }
+        return {
+          correcto: false,
+          mensaje: 'Coloca tus manos frente a la cámara dentro del encuadre.',
+        };
       });
       inicioCorrectoRef.current = null;
-      setTiempoSostenidoSegundos(0);
+      setTiempoSostenidoSegundos((prev) => (prev === 0 ? prev : 0));
       return;
     }
 
     // 1. Evaluar el paso actual con el motor de validación
     const res = validarPasoTecnica(pasoActual, landmarks, handedness);
-    setResultadoValidacion(res);
+    setResultadoValidacion((prev) => {
+      if (
+        prev &&
+        prev.correcto === res.correcto &&
+        prev.mensaje === res.mensaje
+      ) {
+        return prev;
+      }
+      return res;
+    });
 
     const ahora = Date.now();
 
@@ -198,7 +212,9 @@ export const SimulacionCamara: React.FC<SimulacionCamaraProps> = ({ onIntentoGua
       }
 
       const tiempoSostenido = (ahora - inicioCorrectoRef.current) / 1000;
-      setTiempoSostenidoSegundos(tiempoSostenido);
+      setTiempoSostenidoSegundos((prev) =>
+        Math.abs(prev - tiempoSostenido) > 0.08 ? tiempoSostenido : prev
+      );
 
       if (tiempoSostenido >= 1.5) {
         soundManager.playSuccess();
@@ -225,7 +241,7 @@ export const SimulacionCamara: React.FC<SimulacionCamaraProps> = ({ onIntentoGua
     } else {
       // 3. Lógica de postura INCORRECTA (Error cada 3 segundos sostenidos de fallo)
       inicioCorrectoRef.current = null;
-      setTiempoSostenidoSegundos(0);
+      setTiempoSostenidoSegundos((prev) => (prev === 0 ? prev : 0));
 
       if (inicioIncorrectoRef.current === null) {
         inicioIncorrectoRef.current = ahora;
