@@ -1,0 +1,16 @@
+﻿==============================================================================
+RESULTADOS DE PRUEBAS DE INTEGRACIÃ“N E2E (FASE 4: NIVEL 3)
+FECHA: 2026-10-12 22:56:28
+==============================================================================
+INT-01: Onboarding Estudiante (UI -> API -> PostgreSQL): PASS
+INT-02: PrÃ¡ctica con TelemetrÃ­a IA en BD: PASS
+INT-03: ActualizaciÃ³n Reactiva de Dashboard: PASS
+INT-04: MÃºltiples Sesiones y CÃ¡lculo Consistente (Promedio 850.0): PASS
+INT-05: EliminaciÃ³n y RecÃ¡lculo (3 Intentos, Promedio 883.33): PASS
+INT-06: Persistencia de SesiÃ³n F5 (Verificado en Browser Subagent): PASS
+INT-07: Logout y ProtecciÃ³n de Rutas (Verificado en Browser Subagent): PASS
+INT-08: Flujo y MenÃº de Administrador (Verificado en Browser Subagent): PASS
+INT-09: RestricciÃ³n RBAC de Rutas Admin (Verificado en Browser Subagent): PASS
+INT-10: PropagaciÃ³n de VersiÃ³n Activa IA (v1.1-2026-11): PASS
+==============================================================================
+TOTAL: 10/10 PASS (100% Exitoso)
