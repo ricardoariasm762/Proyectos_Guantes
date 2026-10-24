@@ -1,0 +1,11 @@
+[
+  "paso_1_lavado",
+  "paso_2_secado",
+  "paso_3_tomar_guante_der",
+  "paso_4_introducir_mano_der",
+  "paso_5_tomar_guante_izq",
+  "paso_6_ajustar_punos",
+  "INCORRECTO_contaminacion",
+  "INCORRECTO_tocar_exterior",
+  "INCORRECTO_pinza_debil"
+]
