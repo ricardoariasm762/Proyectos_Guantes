@@ -1,0 +1,9 @@
+# Dependencias para entrenamiento del modelo de IA y exportación a TensorFlow.js
+# Proyecto: Simulador de Técnica Estéril - Universidad Cooperativa de Colombia, Campus Pasto
+
+tensorflow>=2.15.0
+tensorflowjs>=4.17.0
+scikit-learn>=1.4.0
+numpy>=1.26.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
