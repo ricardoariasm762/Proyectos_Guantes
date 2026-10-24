@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
@@ -26,6 +27,23 @@ export const AppLayout: React.FC = () => {
   return (
     <div className="app-shell">
       <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+
+      {/* Botón Flotante Estilo Hamburguesa para Ocultar/Mostrar el Sidebar */}
+      {estaAutenticado && (
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((prev) => !prev)}
+          className={`floating-sidebar-toggle ${sidebarOpen ? 'is-open' : 'is-closed'}`}
+          aria-label={sidebarOpen ? 'Ocultar menú lateral' : 'Mostrar menú lateral'}
+          title={sidebarOpen ? 'Ocultar menú lateral' : 'Mostrar menú lateral'}
+        >
+          <span className="toggle-icon-wrap">
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+          </span>
+          <span className="toggle-label">{sidebarOpen ? 'Cerrar' : 'Menú'}</span>
+        </button>
+      )}
+
       <div className="app-body-container">
         {estaAutenticado && (
           <Sidebar
@@ -34,10 +52,10 @@ export const AppLayout: React.FC = () => {
           />
         )}
         <main className={`app-main-content ${!estaAutenticado ? 'full-width' : ''}`}>
-          <div className="content-container-max">
+          <div className={(location.pathname === '/practica-guiada' || location.pathname === '/tutorial3d') ? 'content-container-full' : 'content-container-max'}>
             <Outlet />
           </div>
-          <Footer />
+          {location.pathname !== '/practica-guiada' && location.pathname !== '/tutorial3d' && <Footer />}
         </main>
       </div>
     </div>
