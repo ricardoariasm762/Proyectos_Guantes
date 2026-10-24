@@ -1,0 +1,263 @@
+/* ==========================================================================
+   FASE 4: Estilos CSS para Scrollytelling (TutorialScroll.css)
+   Universidad Cooperativa de Colombia - Campus Pasto
+   ========================================================================== */
+
+/* Contenedor principal del lienzo y visor Scrollytelling */
+.tutorial-scroll-container {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 120px);
+  min-height: 620px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #F0F4F8;
+  box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.8);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.tutorial-scroll-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Secciones superpuestas en el recorrido (100vh de altura) */
+.seccion-scroll-paso {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Alineado a la derecha para no tapar el modelo 3D */
+  padding: 0 6% 0 0;
+  box-sizing: border-box;
+  pointer-events: none;
+  position: relative;
+}
+
+/* Tarjeta de información con efecto vidrio (Glassmorphism) */
+.tarjeta-paso-scroll {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 460px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 20px;
+  padding: 1.85rem;
+  border: 1px solid rgba(0, 180, 216, 0.22);
+  box-shadow: 0 20px 45px -12px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+  color: #0F172A;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tarjeta-paso-scroll:hover {
+  box-shadow: 0 24px 50px -10px rgba(0, 119, 182, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+}
+
+/* Número editorial gigante de fondo (01, 02, etc.) */
+.numero-editorial-fondo {
+  position: absolute;
+  right: 1.25rem;
+  top: 0.25rem;
+  font-size: 5.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(0, 119, 182, 0.08);
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: -0.05em;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* Encabezado y Badges de la Tarjeta */
+.tarjeta-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.badge-paso {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.18) 0%, rgba(0, 119, 182, 0.18) 100%);
+  color: #0077B6;
+  border: 1px solid rgba(0, 180, 216, 0.3);
+}
+
+.badge-tecnica {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #E2E8F0;
+  color: #475569;
+}
+
+/* Tipografía de Título y Descripción */
+.tarjeta-titulo {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #0077B6;
+  line-height: 1.25;
+  margin: 0 0 0.65rem 0;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+
+.tarjeta-descripcion {
+  font-size: 0.92rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 1.15rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Contenedor y Lista de Puntos Críticos */
+.contenedor-puntos-criticos {
+  background: rgba(240, 249, 255, 0.75);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.95rem;
+  border: 1px solid rgba(186, 230, 253, 0.85);
+  position: relative;
+  z-index: 1;
+}
+
+.titulo-puntos-criticos {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0369A1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.lista-puntos-criticos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.item-punto-critico {
+  font-size: 0.82rem;
+  color: #334155;
+  line-height: 1.45;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+
+.bullet-punto {
+  color: #00B4D8;
+  font-size: 1rem;
+  line-height: 1;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+/* Alerta de Asepsia */
+.alerta-asepsia {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  background: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 10px;
+  color: #92400E;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.icono-asepsia {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #D97706;
+}
+
+.texto-asepsia {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.texto-asepsia strong {
+  color: #B45309;
+}
+
+/* Indicador animado de scroll para el Paso 1 */
+.contenedor-indicador-scroll {
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.indicador-scroll-animado {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #0077B6;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Adaptabilidad para Dispositivos Móviles y Tablets */
+@media (max-width: 768px) {
+  .tutorial-scroll-container {
+    height: calc(100vh - 90px);
+    border-radius: 12px;
+  }
+
+  .seccion-scroll-paso {
+    justify-content: center !important;
+    padding: 1rem !important;
+  }
+
+  .tarjeta-paso-scroll {
+    max-width: 95% !important;
+    padding: 1.35rem !important;
+  }
+
+  .numero-editorial-fondo {
+    font-size: 4rem !important;
+    right: 0.75rem;
+    top: 0.25rem;
+  }
+
+  .tarjeta-titulo {
+    font-size: 1.2rem !important;
+  }
+
+  .tarjeta-descripcion {
+    font-size: 0.85rem !important;
+  }
+}
