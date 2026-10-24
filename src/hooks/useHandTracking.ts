@@ -10,12 +10,19 @@ import type {
 } from '../types/mediapipe';
 import { SuavizadorLandmarks } from '../utils/suavizado';
 
-const WASM_CDN_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm';
-const MODEL_ASSET_URL =
+// Rutas locales servidas desde public/ para máxima velocidad, privacidad y funcionamiento offline
+const WASM_LOCAL_URL = '/wasm';
+const MODEL_LOCAL_URL = '/models/hand_landmarker.task';
+
+// Rutas de respaldo por CDN en caso de contingencia
+const WASM_FALLBACK_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
+const MODEL_FALLBACK_URL =
   'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 
-// Limitación a máximo 30 FPS para optimización de CPU/GPU
-const INTERVALO_MIN_MS = 1000 / 30; // ~33.3 ms
+// Inferencia limitada a 30 FPS para optimización de CPU/GPU
+const INTERVALO_MIN_MS = 1000 / 30;
+// React solo recibe landmarks a 20 Hz: suficiente para UI y validación, la mitad de renders
+const INTERVALO_UI_MS = 1000 / 20;
 
 export interface OpcionesHandTracking {
   activo?: boolean; // Permite pausar/reanudar el ciclo de detección
@@ -37,13 +44,100 @@ export interface UseHandTrackingReturn {
   reanudarTracking: () => void;
 }
 
-export function useHandTracking(opciones: OpcionesHandTracking = {}): UseHandTrackingReturn {
-  const [isReady, setIsReady] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [fps, setFps] = useState<number>(0);
-  const [alertaIluminacion, setAlertaIluminacion] = useState<boolean>(false);
+/**
+ * Carga HandLandmarker con estrategia multietapa (Local -> CDN, GPU -> CPU).
+ */
+async function crearLandmarker(): Promise<HandLandmarker> {
+  let vision;
+  try {
+    vision = await FilesetResolver.forVisionTasks(WASM_LOCAL_URL);
+  } catch (errLocalWasm) {
+    console.warn('WASM local no disponible, intentando CDN de respaldo...', errLocalWasm);
+    try {
+      vision = await FilesetResolver.forVisionTasks(WASM_FALLBACK_URL);
+    } catch (errCdn) {
+      throw new Error('No se pudieron cargar los módulos de visión artificial.', { cause: errCdn });
+    }
+  }
 
+  let errorCapturado: unknown = null;
+  for (const ruta of [MODEL_LOCAL_URL, MODEL_FALLBACK_URL]) {
+    for (const delegate of ['GPU', 'CPU'] as const) {
+      try {
+        return await HandLandmarker.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: ruta, delegate },
+          runningMode: 'VIDEO',
+          numHands: 2,
+        });
+      } catch (err) {
+        errorCapturado = err;
+      }
+    }
+  }
+
+  console.error('Fallo al inicializar HandLandmarker en todas las fuentes:', errorCapturado);
+  throw new Error(
+    'No se pudo cargar el modelo de visión artificial. Verifica tu conexión e inténtalo de nuevo.',
+    { cause: errorCapturado }
+  );
+}
+
+/**
+ * Solicita el stream de la cámara frontal con mensajes de error comprensibles.
+ */
+async function abrirCamara(): Promise<MediaStream> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error(
+      'Tu navegador no permite usar la cámara. Abre el simulador en Chrome, Edge o Firefox actualizados.'
+    );
+  }
+
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+      audio: false,
+    });
+  } catch (err: unknown) {
+    const nombre = (err as { name?: string }).name;
+    if (nombre === 'NotAllowedError' || nombre === 'PermissionDeniedError') {
+      throw new Error(
+        'Permiso de cámara denegado. Haz clic en el ícono de cámara de la barra de direcciones, permite el acceso y pulsa Reintentar.',
+        { cause: err }
+      );
+    }
+    if (nombre === 'NotFoundError' || nombre === 'DevicesNotFoundError') {
+      throw new Error('No se encontró ninguna cámara. Conecta una cámara web y pulsa Reintentar.', {
+        cause: err,
+      });
+    }
+    if (nombre === 'NotReadableError' || nombre === 'TrackStartError') {
+      throw new Error(
+        'Otra aplicación está usando la cámara (Zoom, Teams, otra pestaña). Ciérrala y pulsa Reintentar.',
+        { cause: err }
+      );
+    }
+    throw new Error('No se pudo acceder a la cámara del dispositivo.', { cause: err });
+  }
+}
+
+function detenerStream(stream: MediaStream | null) {
+  stream?.getTracks().forEach((track) => track.stop());
+}
+
+function cerrarLandmarker(landmarker: HandLandmarker | null) {
+  try {
+    landmarker?.close();
+  } catch {
+    // El landmarker ya estaba cerrado
+  }
+}
+
+export function useHandTracking(opciones: OpcionesHandTracking = {}): UseHandTrackingReturn {
+  const [isReady, setIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [fps, setFps] = useState(0);
+  const [alertaIluminacion, setAlertaIluminacion] = useState(false);
   const [landmarks, setLandmarks] = useState<ManoLandmarks[]>([]);
   const [handedness, setHandedness] = useState<ManoInfo[]>([]);
 
@@ -54,249 +148,215 @@ export function useHandTracking(opciones: OpcionesHandTracking = {}): UseHandTra
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameIdRef = useRef<number | null>(null);
 
-  const ultimoTiempoDeteccionRef = useRef<number>(0);
-  const ultimoVideoTimestampRef = useRef<number>(-1);
-  const suavizadorRef = useRef<SuavizadorLandmarks>(
-    new SuavizadorLandmarks({ tamanoVentana: opciones.tamanoVentanaSuavizado ?? 5, factorEma: 0.65 })
-  );
+  /**
+   * Cada inicialización recibe un número de generación. Si la generación cambia
+   * (desmontaje, StrictMode o reintento), la inicialización obsoleta libera sus
+   * propios recursos en vez de pisar los de la vigente.
+   */
+  const generacionRef = useRef(0);
 
-  // Métricas de FPS y salto de landmarks
-  const conteoFramesRef = useRef<number>(0);
-  const tiempoInicioFpsRef = useRef<number>(performance.now());
+  const ultimaDeteccionRef = useRef(0);
+  const ultimaPublicacionUIRef = useRef(0);
+  const ultimoVideoTimestampRef = useRef(-1);
+  const suavizadorRef = useRef<SuavizadorLandmarks | null>(null);
+  if (suavizadorRef.current === null) {
+    suavizadorRef.current = new SuavizadorLandmarks({
+      tamanoVentana: opciones.tamanoVentanaSuavizado ?? 5,
+      factorEma: 0.65,
+    });
+  }
+
+  const conteoFramesRef = useRef(0);
+  const inicioVentanaFpsRef = useRef(0);
   const anterioresLandmarksRef = useRef<ManoLandmarks[]>([]);
-  const resolucionReducidaRef = useRef<boolean>(false);
-  const pausadoRef = useRef<boolean>(opciones.activo === false);
+  const resolucionReducidaRef = useRef(false);
+  const pausadoRef = useRef(opciones.activo === false);
+
+  useEffect(() => {
+    if (opciones.activo !== undefined) {
+      pausadoRef.current = !opciones.activo;
+    }
+  }, [opciones.activo]);
 
   /**
-   * Inicializa el modelo HandLandmarker de MediaPipe con aceleración GPU (fallback a CPU).
+   * Libera cámara, modelo y bucle. Es idempotente.
    */
-  const inicializarMediaPipe = useCallback(async (): Promise<HandLandmarker> => {
-    try {
-      const vision = await FilesetResolver.forVisionTasks(WASM_CDN_URL);
+  const liberarRecursos = useCallback(() => {
+    if (animFrameIdRef.current !== null) {
+      cancelAnimationFrame(animFrameIdRef.current);
+      animFrameIdRef.current = null;
+    }
+    detenerStream(streamRef.current);
+    streamRef.current = null;
+    cerrarLandmarker(landmarkerRef.current);
+    landmarkerRef.current = null;
 
-      let landmarker: HandLandmarker;
-      try {
-        // Intento 1: Aceleración por GPU WebGL
-        landmarker = await HandLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: MODEL_ASSET_URL,
-            delegate: 'GPU',
-          },
-          runningMode: 'VIDEO',
-          numHands: 2,
-        });
-      } catch (gpuError) {
-        console.warn('Aceleración GPU no disponible, recurriendo a CPU...', gpuError);
-        // Intento 2: Fallback seguro en CPU
-        landmarker = await HandLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: MODEL_ASSET_URL,
-            delegate: 'CPU',
-          },
-          runningMode: 'VIDEO',
-          numHands: 2,
-        });
-      }
-
-      return landmarker;
-    } catch (err) {
-      console.error('Error al inicializar MediaPipe Tasks Vision:', err);
-      throw new Error(
-        'No se pudo cargar el modelo de visión artificial. Verifica tu conexión a internet e inténtalo de nuevo.'
-      );
+    const video = videoRef.current;
+    if (video) {
+      video.onloadedmetadata = null;
+      video.srcObject = null;
     }
   }, []);
 
-  /**
-   * Solicita el stream de la cámara web nativa del navegador.
-   */
-  const iniciarCamara = useCallback(async (): Promise<MediaStream> => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error(
-        'Tu navegador no soporta acceso a la cámara. Por favor utiliza Google Chrome, Microsoft Edge o Mozilla Firefox actualizados.'
-      );
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user',
-        },
-        audio: false,
-      });
-
-      return stream;
-    } catch (err: unknown) {
-      const domError = err as { name?: string };
-      if (domError.name === 'NotAllowedError' || domError.name === 'PermissionDeniedError') {
-        throw new Error(
-          'Permiso de cámara denegado. Por favor haz clic en el ícono de candado o cámara en la barra de direcciones de tu navegador y autoriza el acceso a la cámara.'
-        );
-      } else if (domError.name === 'NotFoundError' || domError.name === 'DevicesNotFoundError') {
-        throw new Error(
-          'No se detectó ninguna cámara web disponible en tu dispositivo. Conecta una cámara para practicar.'
-        );
-      } else if (domError.name === 'NotReadableError' || domError.name === 'TrackStartError') {
-        throw new Error(
-          'La cámara está en uso por otra pestaña o aplicación (ej. Zoom, Teams). Ciérrala para continuar.'
-        );
-      }
-      throw new Error('Error al acceder a la cámara del dispositivo.');
-    }
-  }, []);
+  // El bucle se reprograma a sí mismo a través de una ref para no referenciarse durante su declaración
+  const bucleRef = useRef<() => void>(() => {});
 
   /**
-   * Bucle continuo de inferencia en tiempo real sincronizado con requestAnimationFrame.
+   * Bucle de inferencia sincronizado con requestAnimationFrame.
    */
-  const loopDeteccion = useCallback(() => {
+  const ejecutarFrame = useCallback(() => {
+    animFrameIdRef.current = requestAnimationFrame(() => bucleRef.current());
+
     const video = videoRef.current;
     const landmarker = landmarkerRef.current;
+    if (!video || !landmarker || video.readyState < 2 || pausadoRef.current) return;
 
-    if (!video || !landmarker || video.readyState < 2) {
-      animFrameIdRef.current = requestAnimationFrame(loopDeteccion);
+    const ahora = performance.now();
+    if (ahora - ultimaDeteccionRef.current < INTERVALO_MIN_MS) return;
+    if (ahora <= ultimoVideoTimestampRef.current) return;
+    ultimaDeteccionRef.current = ahora;
+
+    let results;
+    try {
+      results = landmarker.detectForVideo(video, ahora);
+      ultimoVideoTimestampRef.current = ahora;
+    } catch (detectErr) {
+      console.warn('Advertencia en detección de frame:', detectErr);
       return;
     }
 
-    const ahora = performance.now();
+    const hayManos = results.landmarks.length > 0;
+    // El suavizado corre en cada detección para no perder precisión temporal
+    const manos = hayManos ? suavizadorRef.current!.suavizarTodas(results.landmarks) : [];
 
-    // 1. Control de tasa de cuadros: Máximo 30 FPS
-    if (ahora - ultimoTiempoDeteccionRef.current >= INTERVALO_MIN_MS && !pausadoRef.current) {
-      ultimoTiempoDeteccionRef.current = ahora;
+    // Publicación a React limitada a 20 Hz
+    if (ahora - ultimaPublicacionUIRef.current >= INTERVALO_UI_MS || !hayManos) {
+      ultimaPublicacionUIRef.current = ahora;
 
-      // El timestamp para detectForVideo debe ser estrictamente monótono creciente
-      const videoTimestamp = ahora;
-      if (videoTimestamp > ultimoVideoTimestampRef.current) {
-        try {
-          const results = landmarker.detectForVideo(video, videoTimestamp);
-          ultimoVideoTimestampRef.current = videoTimestamp;
-
-          if (results && results.landmarks && results.landmarks.length > 0) {
-            // Aplicar filtro de suavizado temporal para eliminar jitter antes de entregar
-            const manosSuavizadas = suavizadorRef.current.suavizarTodas(results.landmarks);
-            setLandmarks(manosSuavizadas);
-
-            // Mapear handedness de forma tipada
-            const infosMano: ManoInfo[] = (results.handedness || []).map((catArray, idx) => {
-              const cat = catArray[0];
-              return {
-                index: idx,
-                score: cat?.score ?? 0.9,
-                categoryName: (cat?.categoryName as ManoLateralidad) || (idx === 0 ? 'Left' : 'Right'),
-                displayName: cat?.displayName,
-              };
-            });
-            setHandedness(infosMano);
-
-            // 2. Detección de estabilidad lumínica / jitter brusco
-            if (anterioresLandmarksRef.current.length > 0 && manosSuavizadas.length > 0) {
-              const anteriorMunica = anterioresLandmarksRef.current[0]?.[0];
-              const actualMunica = manosSuavizadas[0]?.[0];
-              if (anteriorMunica && actualMunica) {
-                const desplazamiento = Math.hypot(
-                  actualMunica.x - anteriorMunica.x,
-                  actualMunica.y - anteriorMunica.y
-                );
-                // Si la muñeca salta más de 30% del encuadre en 33ms, suele ser pérdida por baja luz
-                const esAlerta = desplazamiento > 0.3;
-                setAlertaIluminacion((prev) => (prev === esAlerta ? prev : esAlerta));
-              }
-            }
-            anterioresLandmarksRef.current = manosSuavizadas;
-          } else {
-            // Mantener identidad de referencia si ya estaba vacío para evitar Maximum update depth exceeded
-            setLandmarks((prev) => (prev.length === 0 ? prev : []));
-            setHandedness((prev) => (prev.length === 0 ? prev : []));
-            anterioresLandmarksRef.current = [];
-            setAlertaIluminacion((prev) => (prev ? false : prev));
-          }
-
-          // 3. Cálculo de FPS reales y adaptación de rendimiento si cae por debajo de 20 FPS
-          conteoFramesRef.current += 1;
-          const deltaSegundos = (ahora - tiempoInicioFpsRef.current) / 1000;
-          if (deltaSegundos >= 1.0) {
-            const fpsCalculados = Math.round(conteoFramesRef.current / deltaSegundos);
-            setFps((prev) => (prev === fpsCalculados ? prev : fpsCalculados));
-            conteoFramesRef.current = 0;
-            tiempoInicioFpsRef.current = ahora;
-
-            // Optimización dinámica: si FPS < 20 de forma constante, reducir resolución de video
-            if (fpsCalculados < 20 && !resolucionReducidaRef.current && streamRef.current) {
-              const track = streamRef.current.getVideoTracks()[0];
-              if (track && track.applyConstraints) {
-                track
-                  .applyConstraints({
-                    width: { ideal: 320 },
-                    height: { ideal: 240 },
-                  })
-                  .then(() => {
-                    resolucionReducidaRef.current = true;
-                    console.info('Resolución adaptada a 320x240 para optimizar rendimiento.');
-                  })
-                  .catch(() => {});
-              }
-            }
-          }
-        } catch (detectErr) {
-          console.warn('Advertencia en detección de frame:', detectErr);
-        }
+      if (hayManos) {
+        setLandmarks(manos);
+        setHandedness(
+          results.handedness.map((categorias, idx) => {
+            const cat = categorias[0];
+            return {
+              index: idx,
+              score: cat?.score ?? 0.9,
+              categoryName: (cat?.categoryName as ManoLateralidad) || (idx === 0 ? 'Left' : 'Right'),
+              displayName: cat?.displayName,
+            };
+          })
+        );
+      } else {
+        setLandmarks((prev) => (prev.length === 0 ? prev : []));
+        setHandedness((prev) => (prev.length === 0 ? prev : []));
       }
     }
 
-    animFrameIdRef.current = requestAnimationFrame(loopDeteccion);
+    // Saltos bruscos de la muñeca suelen indicar mala iluminación o movimiento rápido
+    const munecaAnterior = anterioresLandmarksRef.current[0]?.[0];
+    const munecaActual = manos[0]?.[0];
+    const esAlerta =
+      !!munecaAnterior &&
+      !!munecaActual &&
+      Math.hypot(munecaActual.x - munecaAnterior.x, munecaActual.y - munecaAnterior.y) > 0.3;
+    setAlertaIluminacion((prev) => (prev === esAlerta ? prev : esAlerta));
+    anterioresLandmarksRef.current = manos;
+
+    // FPS y degradación adaptativa de resolución
+    conteoFramesRef.current += 1;
+    const delta = (ahora - inicioVentanaFpsRef.current) / 1000;
+    if (delta >= 1) {
+      const fpsCalculados = Math.round(conteoFramesRef.current / delta);
+      setFps((prev) => (prev === fpsCalculados ? prev : fpsCalculados));
+      conteoFramesRef.current = 0;
+      inicioVentanaFpsRef.current = ahora;
+
+      const track = streamRef.current?.getVideoTracks()[0];
+      if (fpsCalculados < 20 && !resolucionReducidaRef.current && track?.applyConstraints) {
+        resolucionReducidaRef.current = true;
+        track
+          .applyConstraints({ width: { ideal: 320 }, height: { ideal: 240 } })
+          .catch(() => {
+            resolucionReducidaRef.current = false;
+          });
+      }
+    }
   }, []);
 
+  useEffect(() => {
+    bucleRef.current = ejecutarFrame;
+  }, [ejecutarFrame]);
+
   /**
-   * Arranca o reinicia el sistema completo (cámara + modelo).
+   * Arranca cámara y modelo. Los estados de React solo se escriben tras un await,
+   * así que es seguro llamarla desde el efecto de montaje.
+   */
+  const arrancar = useCallback(async () => {
+    const generacion = ++generacionRef.current;
+    const esVigente = () => generacion === generacionRef.current;
+
+    liberarRecursos();
+    suavizadorRef.current!.reiniciar();
+    anterioresLandmarksRef.current = [];
+    resolucionReducidaRef.current = false;
+    ultimoVideoTimestampRef.current = -1;
+
+    // Modelo y cámara en paralelo: el permiso de cámara se pide mientras descarga el modelo
+    const [resModelo, resCamara] = await Promise.allSettled([crearLandmarker(), abrirCamara()]);
+    const landmarker = resModelo.status === 'fulfilled' ? resModelo.value : null;
+    const stream = resCamara.status === 'fulfilled' ? resCamara.value : null;
+
+    if (!esVigente() || !landmarker || !stream) {
+      cerrarLandmarker(landmarker);
+      detenerStream(stream);
+      if (esVigente()) {
+        const fallo = resCamara.status === 'rejected' ? resCamara.reason : (resModelo as PromiseRejectedResult).reason;
+        setError(fallo instanceof Error ? fallo.message : 'Error desconocido al inicializar.');
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // A partir de aquí la limpieza del efecto (liberarRecursos) se encarga de todo
+    landmarkerRef.current = landmarker;
+    streamRef.current = stream;
+
+    const video = videoRef.current;
+    if (!video) {
+      liberarRecursos();
+      setError('No se encontró el elemento de video.');
+      setIsLoading(false);
+      return;
+    }
+
+    video.srcObject = stream;
+    if (video.readyState < 1) {
+      await new Promise<void>((resolve) => {
+        video.onloadedmetadata = () => resolve();
+      });
+    }
+    await video.play().catch(() => undefined);
+    if (!esVigente()) return;
+
+    conteoFramesRef.current = 0;
+    inicioVentanaFpsRef.current = performance.now();
+    setIsReady(true);
+    setIsLoading(false);
+    animFrameIdRef.current = requestAnimationFrame(() => bucleRef.current());
+  }, [liberarRecursos]);
+
+  /**
+   * Reinicio manual (botón Reintentar): limpia el estado visible y vuelve a arrancar.
    */
   const inicializar = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
     setIsReady(false);
-    suavizadorRef.current.reiniciar();
+    setError(null);
+    setLandmarks([]);
+    setHandedness([]);
+    await arrancar();
+  }, [arrancar]);
 
-    try {
-      // 1. Cargar MediaPipe HandLandmarker
-      const landmarker = await inicializarMediaPipe();
-      landmarkerRef.current = landmarker;
-
-      // 2. Iniciar Stream de cámara
-      const stream = await iniciarCamara();
-      streamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await new Promise<void>((resolve) => {
-          if (!videoRef.current) return resolve();
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current
-              ?.play()
-              .then(() => resolve())
-              .catch(() => resolve());
-          };
-        });
-      }
-
-      setIsReady(true);
-      setIsLoading(false);
-
-      // 3. Comenzar bucle de detección
-      if (animFrameIdRef.current) {
-        cancelAnimationFrame(animFrameIdRef.current);
-      }
-      animFrameIdRef.current = requestAnimationFrame(loopDeteccion);
-    } catch (err: unknown) {
-      const mensaje = err instanceof Error ? err.message : 'Error desconocido al inicializar.';
-      setError(mensaje);
-      setIsLoading(false);
-      setIsReady(false);
-    }
-  }, [inicializarMediaPipe, iniciarCamara, loopDeteccion]);
-
-  /**
-   * Control de pausa y reanudación
-   */
   const pausarTracking = useCallback(() => {
     pausadoRef.current = true;
   }, []);
@@ -305,41 +365,15 @@ export function useHandTracking(opciones: OpcionesHandTracking = {}): UseHandTra
     pausadoRef.current = false;
   }, []);
 
-  // Efecto de inicialización y limpieza al desmontar
   useEffect(() => {
-    inicializar();
-
+    void arrancar();
+    const suavizador = suavizadorRef.current;
     return () => {
-      // 1. Cancelar bucle de animación
-      if (animFrameIdRef.current) {
-        cancelAnimationFrame(animFrameIdRef.current);
-        animFrameIdRef.current = null;
-      }
-
-      // 2. Detener tracks de la cámara
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-
-      // 3. Liberar memoria WebAssembly/GPU de MediaPipe
-      if (landmarkerRef.current) {
-        try {
-          landmarkerRef.current.close();
-        } catch {
-          // Ignorar error al cerrar
-        }
-        landmarkerRef.current = null;
-      }
-
-      // 4. Limpiar video
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-
-      suavizadorRef.current.reiniciar();
+      generacionRef.current += 1; // invalida cualquier inicialización en curso
+      liberarRecursos();
+      suavizador?.reiniciar();
     };
-  }, [inicializar]);
+  }, [arrancar, liberarRecursos]);
 
   return {
     isReady,
