@@ -1,0 +1,13 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-15 - Acceso Con Token Invalido
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Get http://localhost:8080/api/intentos/mis-intentos
+HEADERS: {"Authorization":"Bearer token_falsificado_invalido_123"}
+PAYLOAD: VacÃ­o
+==============================================================================
+STATUS RECIBIDO: 403
+RESPUESTA/ERROR:
+
+
+VEREDICTO: EXITOSO (Status 403 esperado)
+

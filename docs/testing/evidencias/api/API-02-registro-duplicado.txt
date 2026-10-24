@@ -1,0 +1,19 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-02 - Registro Duplicado
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Post http://localhost:8080/api/auth/register
+HEADERS: Ninguno
+PAYLOAD: {
+  "nombre": "Estudiante",
+  "apellido": "Prueba",
+  "email": "prueba_api@ucc.edu.co",
+  "password": "prueba123456",
+  "rol": "ESTUDIANTE"
+}
+==============================================================================
+STATUS RECIBIDO: 400
+RESPUESTA/ERROR:
+{"path":"/api/auth/register","error":"Solicitud incorrecta","message":"El correo electrónico ya está registrado: prueba_api@ucc.edu.co","timestamp":"2026-10-12T22:33:42.2606966","status":400}
+
+VEREDICTO: EXITOSO (Status 400 esperado)
+

@@ -1,0 +1,13 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-13 - Obtener Version Activa IA
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Get http://localhost:8080/api/ia/version/activa
+HEADERS: {"Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcnVlYmFfYXBpQHVjYy5lZHUuY28iLCJpYXQiOjE3OTE4NjI0MjIsImV4cCI6MTc5MTk0ODgyMn0.1fP6sGAvUs6LLpXs2v_tXYX4-TkMjShyYYCtECa01Vk"}
+PAYLOAD: VacÃ­o
+==============================================================================
+STATUS RECIBIDO: 200
+RESPUESTA:
+{"id":3,"version":"v1.1-2026-11","accuracy":0.91,"numClases":9,"numMuestras":3200,"fechaEntrenamiento":"2026-10-12T22:33:42.843262","descripcion":"Modelo reentrenado con aumento de datos clinicos","activo":true}
+
+VEREDICTO: EXITOSO (Status 200 esperado)
+

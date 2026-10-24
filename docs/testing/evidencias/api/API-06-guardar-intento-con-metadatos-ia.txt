@@ -1,0 +1,38 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-06 - Guardar Intento Con Metadatos IA
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Post http://localhost:8080/api/intentos
+HEADERS: {"Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcnVlYmFfYXBpQHVjYy5lZHUuY28iLCJpYXQiOjE3OTE4NjI0MjIsImV4cCI6MTc5MTk0ODgyMn0.1fP6sGAvUs6LLpXs2v_tXYX4-TkMjShyYYCtECa01Vk"}
+PAYLOAD: {
+  "modoPractica": "EVALUACION",
+  "puntaje": 920.0,
+  "duracionSegundos": 180,
+  "completado": true,
+  "confianzaPromedio": 0.89,
+  "fuentePrediccion": "CONSENSO",
+  "versionModelo": "v1.0-2026-10",
+  "detalleIA": "{\"pasos\":[{\"numero\":1,\"correcto\":true,\"confianza\":0.92,\"fuente\":\"CONSENSO\"},{\"numero\":2,\"correcto\":true,\"confianza\":0.88,\"fuente\":\"IA\"}],\"confianzaPromedio\":0.89,\"fuenteDominante\":\"CONSENSO\",\"versionModelo\":\"v1.0-2026-10\"}",
+  "pasos": [
+    {
+      "numeroPaso": 1,
+      "nombrePaso": "Inspeccion de empaque",
+      "exitoso": true,
+      "tiempoSegundos": 25,
+      "precision": 0.92
+    },
+    {
+      "numeroPaso": 2,
+      "nombrePaso": "Apertura en superficie esteril",
+      "exitoso": true,
+      "tiempoSegundos": 35,
+      "precision": 0.88
+    }
+  ]
+}
+==============================================================================
+STATUS RECIBIDO: 201
+RESPUESTA:
+{"id":7,"usuarioId":5,"usuarioNombre":"Estudiante Prueba","usuarioEmail":"prueba_api@ucc.edu.co","modoPractica":"EVALUACION","fechaInicio":"2026-10-12T22:33:42.6705137","fechaFin":null,"puntaje":920.0,"duracionSegundos":180,"completado":true,"observaciones":null,"confianzaPromedio":0.89,"fuentePrediccion":"CONSENSO","versionModelo":"v1.0-2026-10","detalleIA":"{\"pasos\":[{\"numero\":1,\"correcto\":true,\"confianza\":0.92,\"fuente\":\"CONSENSO\"},{\"numero\":2,\"correcto\":true,\"confianza\":0.88,\"fuente\":\"IA\"}],\"confianzaPromedio\":0.89,\"fuenteDominante\":\"CONSENSO\",\"versionModelo\":\"v1.0-2026-10\"}","pasos":[{"id":10,"numeroPaso":1,"nombrePaso":"Inspeccion de empaque","descripcion":null,"exitoso":true,"tiempoSegundos":25,"precision":0.92,"observacionesError":null,"fechaHora":"2026-10-12T22:33:42.6710652"},{"id":11,"numeroPaso":2,"nombrePaso":"Apertura en superficie esteril","descripcion":null,"exitoso":true,"tiempoSegundos":35,"precision":0.88,"observacionesError":null,"fechaHora":"2026-10-12T22:33:42.6710652"}]}
+
+VEREDICTO: EXITOSO (Status 201 esperado)
+

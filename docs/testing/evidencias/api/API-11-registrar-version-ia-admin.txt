@@ -1,0 +1,20 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-11 - Registrar Version IA Admin
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Post http://localhost:8080/api/ia/version
+HEADERS: {"Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkB1Y2MuZWR1LmNvIiwiaWF0IjoxNzkxODYyNDIyLCJleHAiOjE3OTE5NDg4MjJ9.Ky2o8-wGq7Uhu5BqyaLfWY7gzAlKFOjFeMqwmLFQ1mM"}
+PAYLOAD: {
+  "version": "v1.1-2026-11",
+  "accuracy": 0.91,
+  "numClases": 9,
+  "numMuestras": 3200,
+  "descripcion": "Modelo reentrenado con aumento de datos clinicos",
+  "activo": true
+}
+==============================================================================
+STATUS RECIBIDO: 201
+RESPUESTA:
+{"id":3,"version":"v1.1-2026-11","accuracy":0.91,"numClases":9,"numMuestras":3200,"fechaEntrenamiento":"2026-10-12T22:33:42.843262","descripcion":"Modelo reentrenado con aumento de datos clinicos","activo":true}
+
+VEREDICTO: EXITOSO (Status 201 esperado)
+

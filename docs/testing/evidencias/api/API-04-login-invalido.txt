@@ -1,0 +1,16 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-04 - Login Invalido
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Post http://localhost:8080/api/auth/login
+HEADERS: Ninguno
+PAYLOAD: {
+  "email": "prueba_api@ucc.edu.co",
+  "password": "password_incorrecto"
+}
+==============================================================================
+STATUS RECIBIDO: 401
+RESPUESTA/ERROR:
+{"path":"/api/auth/login","error":"No autorizado","message":"Credenciales incorrectas","timestamp":"2026-10-12T22:33:42.4782315","status":401}
+
+VEREDICTO: EXITOSO (Status 401 esperado)
+

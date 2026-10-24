@@ -1,0 +1,19 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-01 - Registro de Usuario
+FECHA: 2026-10-12 22:33:41
+MÃ‰TODO: Post http://localhost:8080/api/auth/register
+HEADERS: Ninguno
+PAYLOAD: {
+  "nombre": "Estudiante",
+  "apellido": "Prueba",
+  "email": "prueba_api@ucc.edu.co",
+  "password": "prueba123456",
+  "rol": "ESTUDIANTE"
+}
+==============================================================================
+STATUS RECIBIDO: 201
+RESPUESTA:
+{"token":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcnVlYmFfYXBpQHVjYy5lZHUuY28iLCJpYXQiOjE3OTE4NjI0MjIsImV4cCI6MTc5MTk0ODgyMn0.1fP6sGAvUs6LLpXs2v_tXYX4-TkMjShyYYCtECa01Vk","tipo":"Bearer","id":5,"nombre":"Estudiante","apellido":"Prueba","email":"prueba_api@ucc.edu.co","rol":"ESTUDIANTE"}
+
+VEREDICTO: EXITOSO (Status 201 esperado)
+

@@ -1,0 +1,18 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-07 - Validacion Confianza Fuera Rango
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Post http://localhost:8080/api/intentos
+HEADERS: {"Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcnVlYmFfYXBpQHVjYy5lZHUuY28iLCJpYXQiOjE3OTE4NjI0MjIsImV4cCI6MTc5MTk0ODgyMn0.1fP6sGAvUs6LLpXs2v_tXYX4-TkMjShyYYCtECa01Vk"}
+PAYLOAD: {
+  "modoPractica": "EVALUACION",
+  "puntaje": 500.0,
+  "duracionSegundos": 300,
+  "confianzaPromedio": 1.50
+}
+==============================================================================
+STATUS RECIBIDO: 400
+RESPUESTA/ERROR:
+{"path":"/api/intentos","error":"Error de validación","message":"Datos de entrada inválidos","errors":{"confianzaPromedio":"La confianza promedio no puede ser mayor a 1.0"},"timestamp":"2026-10-12T22:33:42.7176449","status":400}
+
+VEREDICTO: EXITOSO (Status 400 esperado)
+

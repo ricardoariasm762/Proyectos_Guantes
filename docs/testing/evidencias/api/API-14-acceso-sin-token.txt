@@ -1,0 +1,13 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-14 - Acceso Sin Token
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Get http://localhost:8080/api/intentos/mis-intentos
+HEADERS: Ninguno
+PAYLOAD: VacÃ­o
+==============================================================================
+STATUS RECIBIDO: 403
+RESPUESTA/ERROR:
+
+
+VEREDICTO: EXITOSO (Status 403 esperado)
+

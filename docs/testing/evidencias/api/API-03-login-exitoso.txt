@@ -1,0 +1,16 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-03 - Login Exitoso
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Post http://localhost:8080/api/auth/login
+HEADERS: Ninguno
+PAYLOAD: {
+  "email": "prueba_api@ucc.edu.co",
+  "password": "prueba123456"
+}
+==============================================================================
+STATUS RECIBIDO: 200
+RESPUESTA:
+{"token":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcnVlYmFfYXBpQHVjYy5lZHUuY28iLCJpYXQiOjE3OTE4NjI0MjIsImV4cCI6MTc5MTk0ODgyMn0.1fP6sGAvUs6LLpXs2v_tXYX4-TkMjShyYYCtECa01Vk","tipo":"Bearer","id":5,"nombre":"Estudiante","apellido":"Prueba","email":"prueba_api@ucc.edu.co","rol":"ESTUDIANTE"}
+
+VEREDICTO: EXITOSO (Status 200 esperado)
+

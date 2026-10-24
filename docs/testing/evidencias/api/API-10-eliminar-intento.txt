@@ -1,0 +1,13 @@
+﻿==============================================================================
+CASO DE PRUEBA: API-10 - Eliminar Intento
+FECHA: 2026-10-12 22:33:42
+MÃ‰TODO: Delete http://localhost:8080/api/intentos/7
+HEADERS: {"Authorization":"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcnVlYmFfYXBpQHVjYy5lZHUuY28iLCJpYXQiOjE3OTE4NjI0MjIsImV4cCI6MTc5MTk0ODgyMn0.1fP6sGAvUs6LLpXs2v_tXYX4-TkMjShyYYCtECa01Vk"}
+PAYLOAD: VacÃ­o
+==============================================================================
+STATUS RECIBIDO: 204
+RESPUESTA:
+
+
+VEREDICTO: EXITOSO (Status 204 esperado)
+
