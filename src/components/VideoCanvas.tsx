@@ -8,7 +8,7 @@ import {
   CONEXIONES_MANO,
   PuntosMano,
 } from '../types/mediapipe';
-import { Lock, AlertTriangle, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Lock, AlertTriangle, RefreshCw, Eye, EyeOff, Bot, Cpu } from 'lucide-react';
 
 export interface VideoCanvasProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -21,6 +21,8 @@ export interface VideoCanvasProps {
   error: string | null;
   fps: number;
   alertaIluminacion: boolean;
+  isIAReady?: boolean;
+  isIALoading?: boolean;
   onReintentar?: () => void;
 }
 
@@ -35,6 +37,8 @@ export const VideoCanvas: React.FC<VideoCanvasProps> = ({
   error,
   fps,
   alertaIluminacion,
+  isIAReady,
+  isIALoading,
   onReintentar,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -167,113 +171,42 @@ export const VideoCanvas: React.FC<VideoCanvasProps> = ({
   }, [landmarks, handedness, pasoCorrecto, canvasRef, videoRef]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        position: 'relative',
-        width: '100%',
-        maxWidth: '680px',
-        margin: '0 auto',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#0F172A',
-        aspectRatio: '4 / 3',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
+    <div ref={containerRef} className="video-canvas-container">
       {/* Elemento de Video nativo (en espejo) */}
       <video
         ref={videoRef}
         playsInline
         muted
         autoPlay
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          transform: 'scaleX(-1)', // Efecto espejo para mayor naturalidad
-          display: isReady ? 'block' : 'none',
-        }}
+        className="video-native-feed"
+        style={{ display: isReady ? 'block' : 'none' }}
       />
 
       {/* Capa de Canvas superpuesta para dibujar los landmarks (en espejo sincronizado) */}
       <canvas
         ref={canvasRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          pointerEvents: 'none',
-          transform: 'scaleX(-1)', // Sincronizado exactamente con el video
-          display: isReady ? 'block' : 'none',
-        }}
+        className="video-landmarks-canvas"
+        style={{ display: isReady ? 'block' : 'none' }}
       />
 
       {/* AVISO DE PRIVACIDAD OBLIGATORIO */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '10px',
-          left: '12px',
-          right: '12px',
-          backgroundColor: 'rgba(15, 23, 42, 0.85)',
-          color: '#E2E8F0',
-          fontSize: '0.74rem',
-          padding: '5px 10px',
-          borderRadius: '6px',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          zIndex: 10,
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        }}
-      >
-        <Lock size={13} style={{ color: '#38BDF8', flexShrink: 0 }} />
+      <div className="video-privacy-bar">
+        <Lock size={13} className="video-privacy-icon" />
         <span>🔒 Tu cámara se procesa localmente. Ningún video se envía a servidores.</span>
       </div>
 
       {/* INSIGNIAS SUPERIORES: FPS Y DETECCIÓN */}
       {isReady && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '10px',
-            left: '12px',
-            right: '12px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            zIndex: 10,
-          }}
-        >
+        <div className="video-top-badges">
           {/* Contador de manos */}
           <div
-            style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.8)',
-              color: landmarks.length > 0 ? '#FFFFFF' : '#94A3B8',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              padding: '4px 10px',
-              borderRadius: '20px',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              border: `1px solid ${
-                landmarks.length >= 2
-                  ? '#10B981'
-                  : landmarks.length === 1
-                  ? '#0284C7'
-                  : 'rgba(255, 255, 255, 0.15)'
-              }`,
-            }}
+            className={`video-badge-pill ${
+              landmarks.length >= 2
+                ? 'detected-2'
+                : landmarks.length === 1
+                ? 'detected-1'
+                : 'detected-0'
+            }`}
           >
             {landmarks.length > 0 ? <Eye size={13} /> : <EyeOff size={13} />}
             <span>
@@ -285,43 +218,43 @@ export const VideoCanvas: React.FC<VideoCanvasProps> = ({
             </span>
           </div>
 
-          {/* Medidor de FPS */}
-          <div
-            style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.8)',
-              color: fps >= 24 ? '#34D399' : fps >= 18 ? '#FBBF24' : '#F87171',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: '6px',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-            }}
-          >
-            {fps} FPS
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Estado de IA TensorFlow.js */}
+            <div
+              className="video-fps-badge"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: isIAReady ? 'var(--color-primary-soft)' : isIALoading ? 'var(--color-warning)' : 'var(--text-muted)',
+              }}
+              title={
+                isIAReady
+                  ? 'Red Neuronal client-side activa'
+                  : isIALoading
+                  ? 'Cargando pesos de IA...'
+                  : 'Modo contingencia: Sistema Experto de Reglas Clínicas'
+              }
+            >
+              {isIAReady ? <Bot size={13} /> : <Cpu size={13} />}
+              <span>{isIAReady ? 'IA Activa' : isIALoading ? 'Cargando IA' : 'Reglas'}</span>
+            </div>
+
+            {/* Medidor de FPS */}
+            <div
+              className={`video-fps-badge ${
+                fps >= 24 ? 'fps-optimal' : fps >= 18 ? 'fps-medium' : 'fps-low'
+              }`}
+            >
+              {fps} FPS
+            </div>
           </div>
         </div>
       )}
 
       {/* ALERTA DE ILUMINACIÓN INSUFICIENTE */}
       {isReady && alertaIluminacion && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '46px',
-            left: '12px',
-            right: '12px',
-            backgroundColor: 'rgba(217, 119, 6, 0.9)',
-            color: '#FFFFFF',
-            fontSize: '0.76rem',
-            padding: '6px 10px',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            zIndex: 10,
-            animation: 'fadeIn 0.3s ease-in-out',
-          }}
-        >
+        <div className="video-lighting-alert">
           <AlertTriangle size={15} style={{ flexShrink: 0 }} />
           <span>Iluminación inestable o movimiento rápido. Mejora la luz y mantén las manos estables.</span>
         </div>
@@ -329,39 +262,10 @@ export const VideoCanvas: React.FC<VideoCanvasProps> = ({
 
       {/* PANTALLA DE CARGA */}
       {isLoading && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#0F172A',
-            color: '#FFFFFF',
-            gap: '12px',
-            zIndex: 20,
-            padding: '1.5rem',
-            textAlign: 'center',
-          }}
-        >
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              border: '4px solid rgba(56, 189, 248, 0.2)',
-              borderTopColor: '#38BDF8',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-            }}
-          />
-          <style>{`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
+        <div className="video-loading-overlay">
+          <div className="video-loading-spinner" />
           <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>Iniciando cámara y MediaPipe...</div>
-          <div style={{ fontSize: '0.78rem', color: '#94A3B8', maxWidth: '300px' }}>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: '300px' }}>
             Cargando modelo de visión artificial en el navegador. Por favor permite el acceso a tu cámara.
           </div>
         </div>
@@ -369,60 +273,19 @@ export const VideoCanvas: React.FC<VideoCanvasProps> = ({
 
       {/* PANTALLA DE ERROR */}
       {error && !isLoading && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            color: '#FFFFFF',
-            gap: '12px',
-            zIndex: 25,
-            padding: '1.5rem',
-            textAlign: 'center',
-          }}
-        >
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#EF4444',
-            }}
-          >
+        <div className="video-error-overlay">
+          <div className="video-error-icon-box">
             <AlertTriangle size={26} />
           </div>
-          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#F87171' }}>Acceso a Cámara / IA</div>
-          <div style={{ fontSize: '0.82rem', color: '#CBD5E1', maxWidth: '360px', lineHeight: 1.4 }}>
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-contaminated)' }}>Acceso a Cámara / IA</div>
+          <div style={{ fontSize: '0.82rem', color: 'var(--border-strong)', maxWidth: '360px', lineHeight: 1.4 }}>
             {error}
           </div>
           {onReintentar && (
             <button
               onClick={onReintentar}
-              style={{
-                marginTop: '8px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 16px',
-                backgroundColor: '#0077B6',
-                color: '#FFFFFF',
-                borderRadius: '8px',
-                border: 'none',
-                fontWeight: 600,
-                fontSize: '0.84rem',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#0096C7')}
-              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#0077B6')}
+              className="btn-ctrl-primary"
+              style={{ marginTop: '8px', padding: '8px 16px', fontSize: '0.84rem' }}
             >
               <RefreshCw size={14} />
               Reintentar conexión
