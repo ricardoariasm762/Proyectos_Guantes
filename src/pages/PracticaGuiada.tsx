@@ -1,437 +1,240 @@
-// Módulo de Práctica Guiada Paso a Paso con progresión secuencial y control aséptico
+// Módulo de Práctica Guiada con Secuencia Fotográfica Scrollytelling (Apple-Style)
 // Universidad Cooperativa de Colombia - Campus Pasto
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { PASOS_TECNICA } from '../data/pasosTecnica';
-import { useProgresoStore } from '../store/useProgresoStore';
-import { useTimer } from '../hooks/useTimer';
-import { formatearTiempo } from '../utils/puntuacion';
-import { soundManager } from '../utils/sound';
-import confetti from 'canvas-confetti';
-import {
-  CheckCircle,
-  AlertTriangle,
-  ArrowRight,
-  ArrowLeft,
-  RotateCcw,
-  Clock,
-  ShieldAlert,
-  Award,
-  BookOpen,
-  Sparkles,
-} from 'lucide-react';
-import Modal from '../components/ui/Modal';
-import ProgressBar from '../components/ui/ProgressBar';
-import Badge from '../components/ui/Badge';
-import Card from '../components/ui/Card';
+import React, { useState, useEffect, useCallback } from 'react';
+import { generarRutasFrames, preloadImages, TOTAL_FRAMES } from '../utils/preloadImages';
+import SecuenciaCanvas from '../components/scrollytelling/SecuenciaCanvas';
+import TextosPasos from '../components/scrollytelling/TextosPasos';
+import Preloader from '../components/scrollytelling/Preloader';
+import { Camera, Layers, CheckCircle2 } from 'lucide-react';
 
-const PracticaGuiada: React.FC = () => {
-  const navigate = useNavigate();
-  const agregarIntento = useProgresoStore((state) => state.agregarIntento);
+const NOMBRES_PASOS_CORTOS = [
+  '1. Lavado',
+  '2. Secado',
+  '3. Guante Der',
+  '4. Calce Der',
+  '5. Bolsillo Izq',
+  '6. Ajuste Final',
+];
 
-  const [pasoIndice, setPasoIndice] = useState(0); // 0 a 5
-  const [pasosConfirmados, setPasosConfirmados] = useState<boolean[]>([false, false, false, false, false, false]);
-  const [errores, setErrores] = useState(0);
-  const [listaInfracciones, setListaInfracciones] = useState<string[]>([]);
-  const [modalFinalizado, setModalFinalizado] = useState(false);
-  const [resultadoIntento, setResultadoIntento] = useState<{
-    puntaje: number;
-    tiempoSegundos: number;
-  } | null>(null);
+/**
+ * Práctica Guiada (Scrollytelling Apple-Style)
+ * Guía clínica paso a paso sincronizada con el scroll del estudiante mediante
+ * una secuencia fotográfica de alta resolución y tarjetas de técnica aséptica.
+ */
+export const PracticaGuiada: React.FC = () => {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [progresoCarga, setProgresoCarga] = useState<number>(0);
+  const [cargadas, setCargadas] = useState<number>(0);
+  const [imagenes, setImagenes] = useState<HTMLImageElement[]>([]);
+  const [pasoActivo, setPasoActivo] = useState<number>(1);
+  const [frameActual, setFrameActual] = useState<number>(0);
 
-  const { segundos, iniciar, pausar, reiniciar } = useTimer({
-    autoInicio: true,
-  });
-
-  const pasoActual = PASOS_TECNICA[pasoIndice];
-  const estaConfirmadoActual = pasosConfirmados[pasoIndice];
-  const totalPasos = PASOS_TECNICA.length;
-  const progresoPorcentaje = Math.round((pasosConfirmados.filter(Boolean).length / totalPasos) * 100);
-
-  // Iniciar timer si no estaba corriendo
+  // Precarga asíncrona de los 78 fotogramas al montar el componente
   useEffect(() => {
-    iniciar();
-    return () => pausar();
-  }, [iniciar, pausar]);
+    let montado = true;
+    const rutas = generarRutasFrames(TOTAL_FRAMES);
 
-  const toggleConfirmarPaso = () => {
-    soundManager.playClick();
-    const nuevos = [...pasosConfirmados];
-    nuevos[pasoIndice] = !nuevos[pasoIndice];
-    setPasosConfirmados(nuevos);
-  };
-
-  const registrarFalloAsepsia = () => {
-    soundManager.playError();
-    setErrores((prev) => prev + 1);
-    const mensajeFallo = `Duda o error en Paso ${pasoActual.id}: ${pasoActual.titulo}`;
-    setListaInfracciones((prev) => [...prev, mensajeFallo]);
-  };
-
-  const avanzarPaso = () => {
-    if (!estaConfirmadoActual) return;
-    soundManager.playClick();
-
-    if (pasoIndice < totalPasos - 1) {
-      setPasoIndice((prev) => prev + 1);
-    } else {
-      // Finalizar práctica
-      pausar();
-      const tiempoFinal = segundos;
-      const deduccionErrores = errores * 10;
-      const puntajeFinal = Math.max(0, 100 - deduccionErrores);
-
-      const nuevo = agregarIntento({
-        puntaje: puntajeFinal,
-        tiempoSegundos: tiempoFinal,
-        errores,
-        pasosCompletados: totalPasos,
-        modo: 'guiado',
-        detallesErrores: listaInfracciones,
-      });
-
-      setResultadoIntento({
-        puntaje: nuevo.puntaje,
-        tiempoSegundos: nuevo.tiempoSegundos,
-      });
-
-      soundManager.playSuccess();
-      try {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-      } catch {
-        // Fallback silencioso si no hay soporte canvas
+    preloadImages(rutas, (pct, count) => {
+      if (montado) {
+        setProgresoCarga(pct);
+        setCargadas(count);
       }
+    }).then((imgs) => {
+      if (montado) {
+        setImagenes(imgs);
+        setTimeout(() => {
+          if (montado) setIsLoading(false);
+        }, 250);
+      }
+    });
 
-      setModalFinalizado(true);
-    }
-  };
+    return () => {
+      montado = false;
+    };
+  }, []);
 
-  const retrocederPaso = () => {
-    if (pasoIndice > 0) {
-      soundManager.playClick();
-      setPasoIndice((prev) => prev - 1);
-    }
-  };
-
-  const reiniciarTodo = () => {
-    setPasoIndice(0);
-    setPasosConfirmados([false, false, false, false, false, false]);
-    setErrores(0);
-    setListaInfracciones([]);
-    setModalFinalizado(false);
-    reiniciar(0);
-    iniciar();
-  };
+  const handleFrameChange = useCallback((frameIndex: number) => {
+    setFrameActual(frameIndex);
+    const pasoCalculado = Math.min(
+      6,
+      Math.max(1, Math.floor((frameIndex / TOTAL_FRAMES) * 6) + 1)
+    );
+    setPasoActivo(pasoCalculado);
+  }, []);
 
   return (
-    <div className="practica-guiada-page">
-      <div className="page-header-container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h1 className="page-title">Práctica Guiada: Técnica Quirúrgica</h1>
-            <p className="page-description">
-              Siga estrictamente la secuencia paso a paso verificando los controles asépticos requeridos.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#ffffff', padding: '0.5rem 0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-xs)' }}>
-              <Clock size={18} style={{ color: 'var(--color-primary)' }} />
-              <span style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '1.05rem', color: 'var(--color-primary-dark)' }}>
-                {formatearTiempo(segundos)}
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: errores > 0 ? 'var(--color-contaminated-bg)' : '#ffffff', padding: '0.5rem 0.9rem', borderRadius: 'var(--radius-md)', border: `1px solid ${errores > 0 ? 'var(--color-contaminated-border)' : 'var(--border-light)'}`, boxShadow: 'var(--shadow-xs)' }}>
-              <ShieldAlert size={18} style={{ color: errores > 0 ? 'var(--color-contaminated)' : 'var(--text-muted)' }} />
-              <span style={{ fontWeight: 600, fontSize: '0.9rem', color: errores > 0 ? 'var(--color-contaminated-dark)' : 'var(--text-secondary)' }}>
-                {errores} {errores === 1 ? 'error' : 'errores'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Barra de progreso global */}
-      <div style={{ marginBottom: '1.75rem', background: '#ffffff', padding: '1rem 1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)' }}>
-        <ProgressBar
-          valor={progresoPorcentaje}
-          etiqueta={`Progreso de la técnica: Paso ${pasoIndice + 1} de ${totalPasos}`}
-          mostrarPorcentaje={true}
-          color={progresoPorcentaje === 100 ? 'success' : 'primary'}
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        minHeight: '100vh',
+        background: '#0B1329',
+        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      }}
+    >
+      {/* 1. Pantalla de carga hasta resolver todas las imágenes en memoria */}
+      {isLoading && (
+        <Preloader
+          porcentaje={progresoCarga}
+          cargadas={cargadas}
+          total={TOTAL_FRAMES}
         />
+      )}
 
-        {/* Indicadores de pasos rápidos */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
-          {PASOS_TECNICA.map((p, idx) => {
-            const estaEnEstePaso = idx === pasoIndice;
-            const confirmado = pasosConfirmados[idx];
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPasoIndice(idx)}
-                style={{
-                  padding: '0.45rem 0.2rem',
-                  borderRadius: 'var(--radius-sm)',
-                  border: estaEnEstePaso ? '2px solid var(--color-primary)' : '1px solid var(--border-light)',
-                  background: confirmado ? 'var(--color-sterile-bg)' : estaEnEstePaso ? 'var(--color-primary-ice)' : 'var(--bg-muted)',
-                  color: confirmado ? 'var(--color-sterile-dark)' : estaEnEstePaso ? 'var(--color-primary-dark)' : 'var(--text-secondary)',
-                  fontWeight: estaEnEstePaso || confirmado ? 700 : 500,
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.25rem',
-                }}
-              >
-                <span>P{idx + 1}</span>
-                {confirmado && <CheckCircle size={13} style={{ color: 'var(--color-sterile)' }} />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tarjeta del paso activo */}
-      <Card
-        titulo={`Paso ${pasoActual.id}: ${pasoActual.titulo}`}
-        subtitulo={`Tiempo sugerido: ~${pasoActual.tiempoEstimadoSegundos}s`}
-        icono={<BookOpen size={20} />}
-        className="step-card-active"
-        acciones={
-          <Badge variant={estaConfirmadoActual ? 'success' : 'warning'}>
-            {estaConfirmadoActual ? 'Paso Confirmado' : 'Pendiente de Validación'}
-          </Badge>
-        }
-      >
-        <p style={{ fontSize: '1rem', color: 'var(--text-main)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
-          {pasoActual.descripcion}
-        </p>
-
-        {/* Puntos críticos clínicos */}
-        <div style={{ marginBottom: '1.25rem' }}>
-          <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-primary-dark)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <AlertTriangle size={16} style={{ color: 'var(--color-warning)' }} />
-            Puntos Críticos de Asepsia (Criterios de Evaluación):
-          </h4>
-          <ul className="step-points-list">
-            {pasoActual.puntosCriticos.map((punto, i) => (
-              <li key={i} className="step-point-item">
-                <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>•</span>
-                <span>{punto}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Consejo clínico */}
-        <div className="step-tip-box">
-          <Sparkles size={18} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--color-primary)' }} />
-          <div>
-            <strong>Regla aséptica clave:</strong> {pasoActual.consejoAsepsia}
-          </div>
-        </div>
-
-        {/* Checkbox de confirmación y botón de registro de error */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-light)' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', userSelect: 'none' }}>
-            <input
-              type="checkbox"
-              checked={estaConfirmadoActual}
-              onChange={toggleConfirmarPaso}
-              style={{ width: '20px', height: '20px', accentColor: 'var(--color-sterile)', cursor: 'pointer' }}
-            />
-            <span style={{ fontWeight: 600, fontSize: '0.95rem', color: estaConfirmadoActual ? 'var(--color-sterile-dark)' : 'var(--text-main)' }}>
-              He ejecutado y validado correctamente este paso
+      {/* 2. Barra Superior Flotante de Estado y Progreso (HUD Aséptico) */}
+      {!isLoading && (
+        <header
+          style={{
+            position: 'fixed',
+            top: '76px',
+            left: 'calc(1.25rem + 105px)',
+            right: '1.25rem',
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            pointerEvents: 'none',
+            gap: '1rem',
+          }}
+        >
+          {/* Badge de Técnica Médica */}
+          <div
+            style={{
+              pointerEvents: 'auto',
+              background: 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              color: '#FFFFFF',
+              padding: '0.45rem 1rem',
+              borderRadius: '9999px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.55rem',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '22px',
+                height: '22px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #00B4D8 0%, #0077B6 100%)',
+                color: '#FFFFFF',
+              }}
+            >
+              <Camera size={13} />
             </span>
-          </label>
+            <span>Práctica Guiada • Secuencia Quirúrgica</span>
+            <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
+            <span style={{ color: '#38BDF8', fontWeight: 700 }}>
+              Paso {pasoActivo} de 6
+            </span>
+          </div>
 
-          <button
-            type="button"
-            onClick={registrarFalloAsepsia}
+          {/* Selector de pasos visual en desktop */}
+          <div
             style={{
-              background: 'transparent',
-              border: '1px dashed var(--color-contaminated)',
-              color: 'var(--color-contaminated-dark)',
+              pointerEvents: 'auto',
+              display: 'flex',
+              background: 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              padding: '0.35rem 0.6rem',
+              borderRadius: '9999px',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+              gap: '0.35rem',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+            }}
+            className="hud-pasos-responsive"
+          >
+            {NOMBRES_PASOS_CORTOS.map((nombre, i) => {
+              const pasoNum = i + 1;
+              const esActivo = pasoNum === pasoActivo;
+              const yaCompletado = pasoNum < pasoActivo;
+
+              return (
+                <span
+                  key={i}
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: esActivo ? 700 : 500,
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '9999px',
+                    background: esActivo
+                      ? 'linear-gradient(135deg, #00B4D8 0%, #0077B6 100%)'
+                      : yaCompletado
+                      ? 'rgba(16, 185, 129, 0.2)'
+                      : 'transparent',
+                    color: esActivo
+                      ? '#FFFFFF'
+                      : yaCompletado
+                      ? '#6EE7B7'
+                      : 'rgba(255, 255, 255, 0.6)',
+                    border: esActivo
+                      ? '1px solid rgba(255, 255, 255, 0.3)'
+                      : '1px solid transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {yaCompletado && <CheckCircle2 size={11} />}
+                  {nombre}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Contador de fotogramas */}
+          <div
+            style={{
+              pointerEvents: 'auto',
+              background: 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              color: 'rgba(255, 255, 255, 0.85)',
               padding: '0.45rem 0.85rem',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.82rem',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              cursor: 'pointer',
-            }}
-            title="Registrar una duda, desliz o contacto indebido en este paso"
-          >
-            <ShieldAlert size={15} />
-            <span>Registrar fallo o duda técnica (+1 error)</span>
-          </button>
-        </div>
-
-        {/* Botones de navegación Anterior / Siguiente */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-          <button
-            type="button"
-            onClick={retrocederPaso}
-            disabled={pasoIndice === 0}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.65rem 1.25rem',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-strong)',
-              background: '#ffffff',
-              color: 'var(--text-secondary)',
-              fontWeight: 600,
-              cursor: pasoIndice === 0 ? 'not-allowed' : 'pointer',
-              opacity: pasoIndice === 0 ? 0.5 : 1,
+              gap: '0.45rem',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
             }}
           >
-            <ArrowLeft size={16} />
-            <span>Anterior</span>
-          </button>
-
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button
-              type="button"
-              onClick={reiniciarTodo}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.65rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-muted)',
-                color: 'var(--text-secondary)',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <RotateCcw size={15} />
-              <span>Reiniciar</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={avanzarPaso}
-              disabled={!estaConfirmadoActual}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.65rem 1.5rem',
-                borderRadius: 'var(--radius-md)',
-                border: 'none',
-                background: estaConfirmadoActual
-                  ? 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)'
-                  : '#cbd5e1',
-                color: '#ffffff',
-                fontWeight: 700,
-                cursor: estaConfirmadoActual ? 'pointer' : 'not-allowed',
-                boxShadow: estaConfirmadoActual ? 'var(--shadow-md)' : 'none',
-                transition: 'all 0.2s',
-              }}
-            >
-              <span>{pasoIndice === totalPasos - 1 ? 'Finalizar Práctica' : 'Siguiente Paso'}</span>
-              <ArrowRight size={16} />
-            </button>
+            <Layers size={13} color="#38BDF8" />
+            <span>
+              Frame <strong style={{ color: '#FFFFFF' }}>{frameActual + 1}</strong> / {TOTAL_FRAMES}
+            </span>
           </div>
-        </div>
-      </Card>
+        </header>
+      )}
 
-      {/* Modal de Finalización */}
-      <Modal
-        isOpen={modalFinalizado}
-        onClose={() => setModalFinalizado(false)}
-        title="¡Práctica Guiada Completada!"
-        size="md"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={reiniciarTodo}
-              style={{
-                padding: '0.6rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-strong)',
-                background: '#ffffff',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Repetir Práctica
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="btn-primary-action"
-              style={{ margin: 0, padding: '0.6rem 1.25rem' }}
-            >
-              Ir al Dashboard
-            </button>
-          </>
-        }
-      >
-        <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
-          <div style={{ width: '64px', height: '64px', margin: '0 auto 1rem', borderRadius: '50%', background: 'var(--color-sterile-bg)', color: 'var(--color-sterile)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Award size={36} />
-          </div>
-
-          <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-primary-dark)', marginBottom: '0.5rem' }}>
-            Puntaje Obtenido: {resultadoIntento?.puntaje ?? 0} / 100
-          </h3>
-
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            {resultadoIntento && resultadoIntento.puntaje >= 80
-              ? '¡Excelente ejecución aséptica! Demuestra alto apego a la técnica estéril.'
-              : 'Práctica completada. Revise los puntos críticos de asepsia para disminuir infracciones.'}
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', background: 'var(--bg-muted)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem' }}>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>TIEMPO</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                {formatearTiempo(resultadoIntento?.tiempoSegundos ?? 0)}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>ERRORES</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: errores > 0 ? 'var(--color-contaminated)' : 'var(--color-sterile)' }}>
-                {errores}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>PASOS</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-primary)' }}>
-                6 / 6
-              </div>
-            </div>
-          </div>
-
-          {listaInfracciones.length > 0 && (
-            <div style={{ textAlign: 'left', marginTop: '1rem' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-contaminated-dark)', marginBottom: '0.35rem' }}>
-                Infracciones registradas durante la práctica:
-              </div>
-              <ul style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', paddingLeft: '1.2rem' }}>
-                {listaInfracciones.map((inf, i) => (
-                  <li key={i}>{inf}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </Modal>
+      {/*
+        3. Experiencia de Scrollytelling Apple-Style:
+        SecuenciaCanvas gestiona el contenedor de scroll (600vh) y ancla el canvas mediante sticky,
+        mientras renderiza la capa de textos superpuestos.
+      */}
+      {!isLoading && (
+        <SecuenciaCanvas
+          imagenes={imagenes}
+          totalFrames={TOTAL_FRAMES}
+          onFrameChange={handleFrameChange}
+          alturaScroll="600vh"
+        >
+          <TextosPasos pasoActivo={pasoActivo} />
+        </SecuenciaCanvas>
+      )}
     </div>
   );
 };
