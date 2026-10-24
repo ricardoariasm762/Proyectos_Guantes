@@ -1,0 +1,650 @@
+{
+  "info": {
+    "name": "Simulador Técnica Estéril - Suite de Pruebas E2E",
+    "_postman_id": "7f8b9c0d-1e2a-3b4c-5d6e-7f8a9b0c1d2e",
+    "description": "Colección completa de pruebas automatizadas y manuales para la API REST de Spring Boot (Simulador de Postura de Guantes Quirúrgicos - UCC Pasto).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token_estudiante",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_admin",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "intento_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "usuario_id",
+      "value": "2",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "API-01: Registro de Estudiante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Retorna token JWT y rol ESTUDIANTE', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('token');",
+                  "    pm.expect(json.rol).to.eql('ESTUDIANTE');",
+                  "    pm.collectionVariables.set('token_estudiante', json.token);",
+                  "    pm.collectionVariables.set('usuario_id', json.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Estudiante\",\n  \"apellido\": \"Prueba\",\n  \"email\": \"prueba@ucc.edu.co\",\n  \"password\": \"prueba123456\",\n  \"rol\": \"ESTUDIANTE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "API-02: Registro con Email Duplicado (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Estudiante Duplicado\",\n  \"apellido\": \"Prueba\",\n  \"email\": \"prueba@ucc.edu.co\",\n  \"password\": \"prueba123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "API-03: Login Exitoso (Estudiante)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('token_estudiante', json.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"prueba@ucc.edu.co\",\n  \"password\": \"prueba123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "API-03b: Login Exitoso (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.expect(json.rol).to.eql('ADMIN');",
+                  "pm.collectionVariables.set('token_admin', json.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ucc.edu.co\",\n  \"password\": \"admin123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "API-04: Login con Credenciales Inválidas (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"prueba@ucc.edu.co\",\n  \"password\": \"password_erroneo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Perfil Actual",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/perfil",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "perfil"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Intentos",
+      "item": [
+        {
+          "name": "API-05: Guardar Intento sin Metadatos IA (Legacy)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('intento_id', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modoPractica\": \"GUIADO\",\n  \"puntaje\": 850.0,\n  \"duracionSegundos\": 225,\n  \"completado\": true,\n  \"observaciones\": \"Intento completado sin telemetría de IA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos"]
+            }
+          }
+        },
+        {
+          "name": "API-06: Guardar Intento con Metadatos IA",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.expect(json.confianzaPromedio).to.eql(0.89);",
+                  "pm.expect(json.fuentePrediccion).to.eql('CONSENSO');",
+                  "pm.expect(json.versionModelo).to.eql('v1.0-2026-10');",
+                  "pm.collectionVariables.set('intento_id', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modoPractica\": \"EVALUACION\",\n  \"puntaje\": 920.0,\n  \"duracionSegundos\": 180,\n  \"completado\": true,\n  \"confianzaPromedio\": 0.89,\n  \"fuentePrediccion\": \"CONSENSO\",\n  \"versionModelo\": \"v1.0-2026-10\",\n  \"detalleIA\": \"{\\\"pasos\\\":[{\\\"numero\\\":1,\\\"correcto\\\":true,\\\"confianza\\\":0.92,\\\"fuente\\\":\\\"CONSENSO\\\"},{\\\"numero\\\":2,\\\"correcto\\\":true,\\\"confianza\\\":0.88,\\\"fuente\\\":\\\"IA\\\"}],\\\"confianzaPromedio\\\":0.89,\\\"fuenteDominante\\\":\\\"CONSENSO\\\",\\\"versionModelo\\\":\\\"v1.0-2026-10\\\"}\",\n  \"pasos\": [\n    {\n      \"numeroPaso\": 1,\n      \"nombrePaso\": \"Lavado de manos\",\n      \"exitoso\": true,\n      \"tiempoSegundos\": 30,\n      \"precision\": 0.95\n    },\n    {\n      \"numeroPaso\": 2,\n      \"nombrePaso\": \"Secado con compresa\",\n      \"exitoso\": true,\n      \"tiempoSegundos\": 25,\n      \"precision\": 0.90\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos"]
+            }
+          }
+        },
+        {
+          "name": "API-07: Validación Confianza Fuera de Rango (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modoPractica\": \"EVALUACION\",\n  \"puntaje\": 500.0,\n  \"duracionSegundos\": 300,\n  \"confianzaPromedio\": 1.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos"]
+            }
+          }
+        },
+        {
+          "name": "API-08: Listar Mis Intentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos/mis-intentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos", "mis-intentos"]
+            }
+          }
+        },
+        {
+          "name": "Listar Todos los Intentos (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Intento por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos/{{intento_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos", "{{intento_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Progreso",
+      "item": [
+        {
+          "name": "API-09: Obtener Mi Progreso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.expect(json).to.have.property('intentosTotales');",
+                  "pm.expect(json).to.have.property('promedioPuntaje');",
+                  "pm.expect(json).to.have.property('mejorPuntaje');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/progreso/mi-progreso",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progreso", "mi-progreso"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Progreso por Usuario (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/progreso/usuario/{{usuario_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progreso", "usuario", "{{usuario_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Recalcular Progreso (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/progreso/recalcular/{{usuario_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "progreso", "recalcular", "{{usuario_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Modelo IA",
+      "item": [
+        {
+          "name": "API-11: Registrar Versión del Modelo (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.expect(json.version).to.eql('v1.0-2026-10');",
+                  "pm.expect(json.activo).to.eql(true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"v1.0-2026-10\",\n  \"accuracy\": 0.87,\n  \"numClases\": 9,\n  \"numMuestras\": 2500,\n  \"descripcion\": \"Modelo inicial supervisado entrenado con 2500 muestras\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/version",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ia", "version"]
+            }
+          }
+        },
+        {
+          "name": "API-13: Obtener Versión Activa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "pm.expect(json.activo).to.eql(true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/version/activa",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ia", "version", "activa"]
+            }
+          }
+        },
+        {
+          "name": "Listar Todas las Versiones (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/versiones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ia", "versiones"]
+            }
+          }
+        },
+        {
+          "name": "Estadísticas de IA",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/estadisticas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ia", "estadisticas"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Pruebas de Seguridad",
+      "item": [
+        {
+          "name": "API-12: Estudiante Intenta Registrar Modelo (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"v9.9-hack\",\n  \"accuracy\": 0.99,\n  \"numClases\": 9,\n  \"numMuestras\": 100,\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ia/version",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ia", "version"]
+            }
+          }
+        },
+        {
+          "name": "API-14: Acceso sin Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos/mis-intentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos", "mis-intentos"]
+            }
+          }
+        },
+        {
+          "name": "API-15: Acceso con Token Inválido o Expirado (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer token_falso_invalido_12345" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos/mis-intentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos", "mis-intentos"]
+            }
+          }
+        },
+        {
+          "name": "Estudiante Intenta Listar Todos los Intentos (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_estudiante}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/intentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "intentos"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
