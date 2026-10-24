@@ -5,14 +5,16 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Box,
   ClipboardCheck,
   HandMetal,
   Camera,
   Trophy,
   User,
   Sparkles,
+  Database,
+  Bot,
 } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,7 +22,9 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
-  const navItems = [
+  const usuario = useAuthStore((s) => s.usuario);
+
+  const baseNavItems = [
     {
       to: '/dashboard',
       label: 'Dashboard',
@@ -28,16 +32,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
       badge: null,
     },
     {
-      to: '/tutorial3d',
-      label: 'Tutorial 3D',
-      icon: Box,
-      badge: '3D',
-    },
-    {
       to: '/practica-guiada',
       label: 'Práctica Guiada',
       icon: ClipboardCheck,
-      badge: null,
+      badge: 'Secuencia',
     },
     {
       to: '/simulacion-camara',
@@ -64,6 +62,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
       badge: null,
     },
   ];
+
+  const adminNavItems = [
+    {
+      to: '/recolector',
+      label: 'Recolector de datos',
+      icon: Database,
+      badge: 'Admin',
+    },
+    {
+      to: '/admin/modelos-ia',
+      label: 'Modelos IA',
+      icon: Bot,
+      badge: 'Admin',
+    },
+  ];
+
+  const navItems = usuario?.rol === 'ADMIN' ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 
   return (
     <>
