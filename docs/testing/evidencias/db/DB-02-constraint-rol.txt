@@ -1,0 +1,17 @@
+EVIDENCIA DE PRUEBA: DB-02
+Caso: Verificación de Restricciones CHECK para Roles de Usuario
+Fecha: 2026-10-12 22:22:46
+Base de Datos: guantes_db (PostgreSQL 18.3)
+Comando Ejecutado:
+INSERT INTO usuarios (nombre, apellido, email, password, rol, activo) 
+VALUES ('Test Rol', 'Constraint', 'testrol@test.com', '$2a$10$hash', 'INVALIDO', true);
+
+RESULTADO:
+ERROR:  el nuevo registro para la relación «usuarios» viola la restricción «check» «usuarios_rol_check»
+DETALLE:  La fila que falla contiene (3, t, Constraint, testrol@test.com, null, null, Test Rol, $2a$10$hash, INVALIDO).
+
+ANÁLISIS:
+El motor PostgreSQL interceptó correctamente la inserción de un rol no admitido en el dominio del enum JPA ('ADMIN', 'DOCENTE', 'ESTUDIANTE'). 
+Transacción abortada correctamente sin inserción de tuplas anómalas.
+
+ESTADO: EXITOSO (Restricción CHECK de dominio validada).

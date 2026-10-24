@@ -1,0 +1,66 @@
+EVIDENCIA DE PRUEBA: DB-01
+Caso: Verificación de Estructura de Tablas y Columnas de Telemetría IA
+Fecha: 2026-10-12 22:22:38
+Base de Datos: guantes_db (PostgreSQL 18.3)
+Comando Ejecutado:
+SELECT table_name, column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_schema = 'public' 
+  AND table_name IN ('usuarios', 'intentos_practica', 'pasos_completados', 'progresos', 'modelos_ia') 
+ORDER BY table_name, ordinal_position;
+
+RESULTADO:
+    table_name     |      column_name      |          data_type          | is_nullable 
+-------------------+-----------------------+-----------------------------+-------------
+ intentos_practica | id                    | bigint                      | NO
+ intentos_practica | completado            | boolean                     | NO
+ intentos_practica | confianza_promedio    | double precision            | YES
+ intentos_practica | detalle_ia            | text                        | YES
+ intentos_practica | duracion_segundos     | integer                     | YES
+ intentos_practica | fecha_fin             | timestamp without time zone | YES
+ intentos_practica | fecha_inicio          | timestamp without time zone | NO
+ intentos_practica | fuente_prediccion     | character varying           | YES
+ intentos_practica | modo_practica         | character varying           | NO
+ intentos_practica | observaciones         | text                        | YES
+ intentos_practica | puntaje               | double precision            | YES
+ intentos_practica | version_modelo        | character varying           | YES
+ intentos_practica | usuario_id            | bigint                      | NO
+ modelos_ia        | id                    | bigint                      | NO
+ modelos_ia        | accuracy              | double precision            | NO
+ modelos_ia        | activo                | boolean                     | YES
+ modelos_ia        | descripcion           | text                        | YES
+ modelos_ia        | fecha_entrenamiento   | timestamp without time zone | NO
+ modelos_ia        | num_clases            | integer                     | NO
+ modelos_ia        | num_muestras          | integer                     | NO
+ modelos_ia        | version               | character varying           | NO
+ pasos_completados | id                    | bigint                      | NO
+ pasos_completados | descripcion           | text                        | YES
+ pasos_completados | exitoso               | boolean                     | NO
+ pasos_completados | fecha_hora            | timestamp without time zone | YES
+ pasos_completados | nombre_paso           | character varying           | NO
+ pasos_completados | numero_paso           | integer                     | NO
+ pasos_completados | observaciones_error   | text                        | YES
+ pasos_completados | precision_obtenida    | double precision            | YES
+ pasos_completados | tiempo_segundos       | integer                     | YES
+ pasos_completados | intento_id            | bigint                      | NO
+ progresos         | id                    | bigint                      | NO
+ progresos         | intentos_exitosos     | integer                     | NO
+ progresos         | intentos_totales      | integer                     | NO
+ progresos         | mejor_puntaje         | double precision            | NO
+ progresos         | nivel_alcanzado       | character varying           | YES
+ progresos         | promedio_puntaje      | double precision            | NO
+ progresos         | tiempo_total_segundos | integer                     | NO
+ progresos         | ultimo_acceso         | timestamp without time zone | YES
+ progresos         | usuario_id            | bigint                      | NO
+ usuarios          | id                    | bigint                      | NO
+ usuarios          | activo                | boolean                     | NO
+ usuarios          | apellido              | character varying           | NO
+ usuarios          | email                 | character varying           | NO
+ usuarios          | fecha_actualizacion   | timestamp without time zone | YES
+ usuarios          | fecha_creacion        | timestamp without time zone | YES
+ usuarios          | nombre                | character varying           | NO
+ usuarios          | password              | character varying           | NO
+ usuarios          | rol                   | character varying           | NO
+(49 filas)
+
+ESTADO: EXITOSO (49 columnas verificadas, 5 entidades consistentes).

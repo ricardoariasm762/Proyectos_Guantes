@@ -1,0 +1,47 @@
+EVIDENCIA DE PRUEBA: DB-03
+Caso: Verificación de Integridad Referencial y Cascada al Eliminar Usuario
+Fecha: 2026-10-12 22:24:58
+Base de Datos: guantes_db (PostgreSQL 18.3)
+
+HALLAZGO PREVIO (BUG-001):
+Inicialmente, las claves foráneas creadas por Hibernate contaban con 'delete_rule = NO ACTION':
+- fkl5p8og4xym3mkqwofipoik5fb (intentos_practica -> usuarios)
+- fkgaos39djmre5yjxfuenl578kv (pasos_completados -> intentos_practica)
+- fk3rdrf36k70chrnbuskgd8y9tq (progresos -> usuarios)
+Al intentar eliminar un usuario con registros asociados, la BD arrojaba:
+"ERROR: update o delete en «usuarios» viola la llave foránea «fkl5p8og4xym3mkqwofipoik5fb» en la tabla «intentos_practica»".
+
+RESOLUCIÓN Y APLICACIÓN DE MIGRACIÓN:
+Se actualizaron las 3 restricciones con 'ON DELETE CASCADE' garantizando consistencia referencial:
+ALTER TABLE pasos_completados DROP CONSTRAINT fkgaos39djmre5yjxfuenl578kv;
+ALTER TABLE pasos_completados ADD CONSTRAINT fkgaos39djmre5yjxfuenl578kv FOREIGN KEY (intento_id) REFERENCES intentos_practica(id) ON DELETE CASCADE;
+
+ALTER TABLE intentos_practica DROP CONSTRAINT fkl5p8og4xym3mkqwofipoik5fb;
+ALTER TABLE intentos_practica ADD CONSTRAINT fkl5p8og4xym3mkqwofipoik5fb FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE;
+
+ALTER TABLE progresos DROP CONSTRAINT fk3rdrf36k70chrnbuskgd8y9tq;
+ALTER TABLE progresos ADD CONSTRAINT fk3rdrf36k70chrnbuskgd8y9tq FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE;
+
+RESULTADO TRAS LA MIGRACIÓN:
+INSERT INTO usuarios (id, nombre, apellido, email, password, rol, activo, fecha_creacion)
+VALUES (999, 'Test', 'Cascada', 'testcascada@test.com', 'hash123', 'ESTUDIANTE', true, NOW());
+
+INSERT INTO progresos (id, usuario_id, intentos_totales, intentos_exitosos, mejor_puntaje, promedio_puntaje, tiempo_total_segundos)
+VALUES (999, 999, 1, 1, 900.0, 900.0, 120);
+
+INSERT INTO intentos_practica (id, usuario_id, modo_practica, fecha_inicio, completado, puntaje, duracion_segundos)
+VALUES (999, 999, 'GUIADO', NOW(), true, 900.0, 120);
+
+INSERT INTO pasos_completados (id, intento_id, numero_paso, nombre_paso, exitoso)
+VALUES (999, 999, 1, 'Paso 1', true);
+
+DELETE FROM usuarios WHERE email = 'testcascada@test.com';
+
+SELECT COUNT(*) AS intentos_restantes FROM intentos_practica WHERE usuario_id = 999;
+-> 0 filas
+SELECT COUNT(*) AS progresos_restantes FROM progresos WHERE usuario_id = 999;
+-> 0 filas
+SELECT COUNT(*) AS pasos_restantes FROM pasos_completados WHERE intento_id = 999;
+-> 0 filas
+
+ESTADO: EXITOSO (Borrado en cascada verificado y mitigación de BUG-001 validada).
