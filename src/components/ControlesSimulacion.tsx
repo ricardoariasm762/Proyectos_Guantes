@@ -28,47 +28,13 @@ export const ControlesSimulacion: React.FC<ControlesSimulacionProps> = ({
   guardandoResultado = false,
 }) => {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.85rem',
-        flexWrap: 'wrap',
-        padding: '0.9rem 1.2rem',
-        backgroundColor: '#FFFFFF',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
-        border: '1px solid #E2E8F0',
-        width: '100%',
-      }}
-    >
+    <div className="controles-simulacion-bar">
       {/* 1. BOTÓN INICIAR PRÁCTICA (PRIMARIO - Visible antes de comenzar) */}
       {!practicaActiva && !practicaCompletada && (
         <button
           onClick={onIniciar}
           disabled={cargandoIA}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.55rem',
-            padding: '0.75rem 1.6rem',
-            backgroundColor: cargandoIA ? '#94A3B8' : '#0077B6',
-            color: '#FFFFFF',
-            borderRadius: '8px',
-            border: 'none',
-            fontSize: '0.92rem',
-            fontWeight: 700,
-            cursor: cargandoIA ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            boxShadow: '0 2px 4px rgba(0, 119, 182, 0.3)',
-          }}
-          onMouseOver={(e) => {
-            if (!cargandoIA) e.currentTarget.style.backgroundColor = '#0096C7';
-          }}
-          onMouseOut={(e) => {
-            if (!cargandoIA) e.currentTarget.style.backgroundColor = '#0077B6';
-          }}
+          className="btn-ctrl-primary"
         >
           {cargandoIA ? (
             <>
@@ -88,26 +54,7 @@ export const ControlesSimulacion: React.FC<ControlesSimulacionProps> = ({
       {practicaActiva && !practicaCompletada && (
         <button
           onClick={onPausarReanudar}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.55rem',
-            padding: '0.75rem 1.4rem',
-            backgroundColor: enPausa ? '#0077B6' : '#F1F5F9',
-            color: enPausa ? '#FFFFFF' : '#1E293B',
-            borderRadius: '8px',
-            border: `1px solid ${enPausa ? '#0077B6' : '#CBD5E1'}`,
-            fontSize: '0.88rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = enPausa ? '#0096C7' : '#E2E8F0';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = enPausa ? '#0077B6' : '#F1F5F9';
-          }}
+          className={`btn-ctrl-secondary ${enPausa ? 'active-pause' : ''}`}
         >
           {enPausa ? (
             <>
@@ -127,28 +74,7 @@ export const ControlesSimulacion: React.FC<ControlesSimulacionProps> = ({
       {(practicaActiva || practicaCompletada) && (
         <button
           onClick={onReiniciar}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.55rem',
-            padding: '0.75rem 1.2rem',
-            backgroundColor: '#FEF2F2',
-            color: '#DC2626',
-            borderRadius: '8px',
-            border: '1px solid #FECACA',
-            fontSize: '0.88rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#FEE2E2';
-            e.currentTarget.style.borderColor = '#FCA5A5';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = '#FEF2F2';
-            e.currentTarget.style.borderColor = '#FECACA';
-          }}
+          className="btn-ctrl-danger"
         >
           <RotateCcw size={16} />
           <span>Reiniciar</span>
@@ -160,27 +86,7 @@ export const ControlesSimulacion: React.FC<ControlesSimulacionProps> = ({
         <button
           onClick={onFinalizarGuardar}
           disabled={guardandoResultado}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            padding: '0.75rem 1.6rem',
-            backgroundColor: '#16A34A',
-            color: '#FFFFFF',
-            borderRadius: '8px',
-            border: 'none',
-            fontSize: '0.92rem',
-            fontWeight: 700,
-            cursor: guardandoResultado ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            boxShadow: '0 2px 5px rgba(22, 163, 74, 0.35)',
-          }}
-          onMouseOver={(e) => {
-            if (!guardandoResultado) e.currentTarget.style.backgroundColor = '#15803D';
-          }}
-          onMouseOut={(e) => {
-            if (!guardandoResultado) e.currentTarget.style.backgroundColor = '#16A34A';
-          }}
+          className="btn-ctrl-success"
         >
           {guardandoResultado ? (
             <>
