@@ -1,139 +1,167 @@
-// Filtro de suavizado de landmarks para reducir jitter y ruido en tiempo real
+// Filtro de suavizado temporal de landmarks (EMA + Buffer Circular) para reducir jitter
 // Proyecto: Simulador de Técnica Estéril - Universidad Cooperativa de Colombia, Campus Pasto
 
 import type { Landmark3D, ManoLandmarks } from '../types/mediapipe';
 
-export interface OpcionesSuavizado {
-  tamanoVentana?: number; // Número de frames en el buffer (por defecto 5)
-  factorEma?: number;     // Factor alfa para EMA [0.0 - 1.0], donde valores cercanos a 1 priorizan el frame actual
+/**
+ * Buffer circular interno para los últimos N frames
+ */
+const TAMANO_BUFFER_POR_DEFECTO = 5;
+const ALPHA_EMA_POR_DEFECTO = 0.5;
+
+// Variables de estado del filtro global
+let bufferCircular: ManoLandmarks[] = [];
+let ultimoEstadoEma: ManoLandmarks | null = null;
+
+/**
+ * Resetea el buffer circular y el estado EMA acumulado.
+ * Llamar al cambiar de paso, reiniciar la práctica o al perder el tracking.
+ */
+export function resetearBuffer(): void {
+  bufferCircular = [];
+  ultimoEstadoEma = null;
 }
 
 /**
- * Clase que gestiona el suavizado temporal de landmarks de manos usando
- * un búfer de ventana móvil con media ponderada exponencial (EMA).
+ * Aplica un filtro de media móvil exponencial (EMA con alpha = 0.5) respaldado por
+ * un buffer circular de los últimos N=5 frames para eliminar el jitter en los 21 landmarks.
+ *
+ * Fórmula: ema = alpha * actual + (1 - alpha) * anterior
+ *
+ * @param landmarks Puntos clave detectados en el frame actual (21 puntos)
+ * @param alpha Factor de ponderación (por defecto 0.5)
+ * @returns Colección de 21 landmarks estabilizados
+ */
+export function suavizarLandmarks(
+  landmarks: ManoLandmarks | undefined | null,
+  alpha = ALPHA_EMA_POR_DEFECTO
+): ManoLandmarks {
+  if (!landmarks || landmarks.length !== 21) {
+    return [];
+  }
+
+  // 1. Mantener buffer circular de los últimos 5 frames
+  bufferCircular.push(landmarks);
+  if (bufferCircular.length > TAMANO_BUFFER_POR_DEFECTO) {
+    bufferCircular.shift();
+  }
+
+  // 2. Si no hay estado previo, inicializar con el frame actual
+  if (!ultimoEstadoEma || ultimoEstadoEma.length !== 21) {
+    ultimoEstadoEma = landmarks.map((p) => ({ ...p }));
+    return ultimoEstadoEma;
+  }
+
+  // 3. Aplicar EMA landmark por landmark: ema = alpha * actual + (1 - alpha) * anterior
+  const suavizados: ManoLandmarks = [];
+  for (let i = 0; i < 21; i++) {
+    const act = landmarks[i];
+    const ant = ultimoEstadoEma[i];
+
+    const x = alpha * act.x + (1 - alpha) * ant.x;
+    const y = alpha * act.y + (1 - alpha) * ant.y;
+    const z = alpha * act.z + (1 - alpha) * ant.z;
+
+    suavizados.push({
+      x,
+      y,
+      z,
+      visibility: act.visibility,
+    });
+  }
+
+  ultimoEstadoEma = suavizados;
+  return suavizados;
+}
+
+/**
+ * Opciones para la clase configurable SuavizadorLandmarks
+ */
+export interface OpcionesSuavizado {
+  tamanoVentana?: number;
+  factorEma?: number;
+}
+
+/**
+ * Gestor multi-mano con buffers independientes para cada mano (0 o 1).
+ * Utilizado por hooks que procesan múltiples manos en paralelo.
  */
 export class SuavizadorLandmarks {
   private tamanoVentana: number;
   private factorEma: number;
-  // Búfer de historial por índice de mano: manoId (0 o 1) -> lista de frames (cada frame es ManoLandmarks)
   private historialManos: Map<number, ManoLandmarks[]> = new Map();
-  // Estado previo EMA por mano
   private estadoEma: Map<number, ManoLandmarks> = new Map();
 
   constructor(opciones: OpcionesSuavizado = {}) {
-    this.tamanoVentana = opciones.tamanoVentana ?? 5;
-    this.factorEma = opciones.factorEma ?? 0.65;
+    this.tamanoVentana = opciones.tamanoVentana ?? TAMANO_BUFFER_POR_DEFECTO;
+    this.factorEma = opciones.factorEma ?? ALPHA_EMA_POR_DEFECTO;
   }
 
-  /**
-   * Suaviza una colección de landmarks para una mano específica.
-   *
-   * @param landmarks Nuevos landmarks detectados en el frame actual (21 puntos)
-   * @param manoId Identificador o índice de la mano (0 para primera mano, 1 para segunda)
-   * @returns Colección de 21 landmarks suavizados
-   */
   public suavizar(landmarks: ManoLandmarks, manoId = 0): ManoLandmarks {
     if (!landmarks || landmarks.length !== 21) {
       return landmarks;
     }
 
-    // Obtener o inicializar el buffer para esta mano
     let buffer = this.historialManos.get(manoId);
     if (!buffer) {
       buffer = [];
       this.historialManos.set(manoId, buffer);
     }
 
-    // Añadir frame actual al buffer de ventana
     buffer.push(landmarks);
     if (buffer.length > this.tamanoVentana) {
       buffer.shift();
     }
 
-    // 1. Calcular promedio simple de la ventana móvil (SMA)
-    const landmarksSma: ManoLandmarks = [];
-    const numFrames = buffer.length;
-
-    for (let i = 0; i < 21; i++) {
-      let sumaX = 0;
-      let sumaY = 0;
-      let sumaZ = 0;
-
-      for (const frame of buffer) {
-        sumaX += frame[i].x;
-        sumaY += frame[i].y;
-        sumaZ += frame[i].z;
-      }
-
-      landmarksSma.push({
-        x: sumaX / numFrames,
-        y: sumaY / numFrames,
-        z: sumaZ / numFrames,
-      });
-    }
-
-    // 2. Aplicar suavizado exponencial (EMA) sobre el promedio móvil para máxima estabilidad
     const prevEma = this.estadoEma.get(manoId);
-    if (!prevEma) {
-      this.estadoEma.set(manoId, landmarksSma);
-      return landmarksSma;
+    if (!prevEma || prevEma.length !== 21) {
+      const inicial = landmarks.map((p) => ({ ...p }));
+      this.estadoEma.set(manoId, inicial);
+      return inicial;
     }
 
-    const landmarksSuavizados: ManoLandmarks = [];
     const alpha = this.factorEma;
+    const suavizados: ManoLandmarks = [];
 
     for (let i = 0; i < 21; i++) {
-      const actual = landmarksSma[i];
-      const anterior = prevEma[i];
+      const act = landmarks[i];
+      const ant = prevEma[i];
 
-      const x = alpha * actual.x + (1 - alpha) * anterior.x;
-      const y = alpha * actual.y + (1 - alpha) * anterior.y;
-      const z = alpha * actual.z + (1 - alpha) * anterior.z;
+      const x = alpha * act.x + (1 - alpha) * ant.x;
+      const y = alpha * act.y + (1 - alpha) * ant.y;
+      const z = alpha * act.z + (1 - alpha) * ant.z;
 
-      landmarksSuavizados.push({ x, y, z });
+      suavizados.push({ x, y, z, visibility: act.visibility });
     }
 
-    this.estadoEma.set(manoId, landmarksSuavizados);
-    return landmarksSuavizados;
+    this.estadoEma.set(manoId, suavizados);
+    return suavizados;
   }
 
-  /**
-   * Suaviza múltiples manos en un solo llamado.
-   *
-   * @param manosLista Array con los landmarks de cada mano detectada
-   * @returns Array con los landmarks suavizados de cada mano
-   */
   public suavizarTodas(manosLista: ManoLandmarks[]): ManoLandmarks[] {
     if (!manosLista || manosLista.length === 0) {
       return [];
     }
-
     return manosLista.map((mano, idx) => this.suavizar(mano, idx));
   }
 
-  /**
-   * Limpia el historial y reinicia el estado de suavizado.
-   * Se debe llamar al reiniciar la práctica o al perder el tracking de las manos.
-   */
   public reiniciar(): void {
     this.historialManos.clear();
     this.estadoEma.clear();
+    resetearBuffer();
   }
 }
 
 /**
- * Instancia singleton compartida para uso directo por defecto.
+ * Instancia singleton compartida
  */
 export const suavizadorGlobal = new SuavizadorLandmarks({
   tamanoVentana: 5,
-  factorEma: 0.65,
+  factorEma: 0.5,
 });
 
 /**
- * Función utilitaria pura para promediar un arreglo de landmarks por índice (SMA de 21 puntos).
- *
- * @param bufferFrames Lista de frames de landmarks capturados
- * @returns Landmarks promediados
+ * Función utilitaria pura para promediar frames
  */
 export function promediarLandmarksBuffer(bufferFrames: ManoLandmarks[]): ManoLandmarks {
   if (!bufferFrames || bufferFrames.length === 0) return [];
