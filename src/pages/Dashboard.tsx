@@ -13,7 +13,6 @@ import {
   Flame,
   ArrowRight,
   TrendingUp,
-  Box,
   HandMetal,
   Camera,
   Trophy,
@@ -264,16 +263,16 @@ const Dashboard: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
           <div
             className="card-container card-hover-effect"
-            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.75rem', border: '1.5px solid #BAE6FD' }}
+            style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.75rem', border: '1.5px solid var(--color-primary-soft)' }}
             onClick={() => navigate('/simulacion-camara')}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: '#E0F2FE', color: '#0077B6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--color-primary-ice)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Camera size={22} />
               </div>
               <div>
                 <h4 style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>Simulación Cámara IA</h4>
-                <span style={{ fontSize: '0.75rem', color: '#0284C7', fontWeight: 600 }}>MediaPipe Hands • Visión en vivo</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-primary-light)', fontWeight: 600 }}>MediaPipe Hands • Visión en vivo</span>
               </div>
             </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
@@ -284,19 +283,19 @@ const Dashboard: React.FC = () => {
           <div
             className="card-container card-hover-effect"
             style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
-            onClick={() => navigate('/tutorial3d')}
+            onClick={() => navigate('/practica-guiada')}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--color-primary-ice)', color: 'var(--color-primary-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Box size={22} />
+                <ClipboardCheck size={22} />
               </div>
               <div>
-                <h4 style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>Tutorial 3D</h4>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Visor anatómico 360°</span>
+                <h4 style={{ fontWeight: 700, color: 'var(--color-primary-dark)' }}>Práctica Guiada</h4>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Secuencia Fotográfica Apple-Style</span>
               </div>
             </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-              Examine la cinemática de la postura de guantes con controles orbitales de cámara, velocidad y hotspots informativos.
+              Recorrido interactivo cuadro a cuadro de la técnica aséptica de postura de guantes controlado por scroll con puntos críticos.
             </p>
           </div>
 
