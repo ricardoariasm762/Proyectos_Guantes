@@ -31,9 +31,10 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) =
         {estaAutenticado && (
           <button
             type="button"
-            className="mobile-toggle-btn"
+            className="navbar-toggle-btn"
             onClick={() => setSidebarOpen((prev) => !prev)}
             aria-label="Abrir o cerrar menú lateral"
+            title={sidebarOpen ? "Ocultar menú lateral" : "Mostrar menú lateral"}
           >
             {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
