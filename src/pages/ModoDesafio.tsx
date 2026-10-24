@@ -4,6 +4,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProgresoStore } from '../store/useProgresoStore';
+import { usePracticaStore } from '../store/usePracticaStore';
+import { guardarIntento } from '../services/intentoService';
 import { useTimer } from '../hooks/useTimer';
 import { formatearTiempo, formatearFecha } from '../utils/puntuacion';
 import { soundManager } from '../utils/sound';
@@ -19,6 +21,7 @@ import {
   Award,
   AlertCircle,
   HelpCircle,
+  Bot,
 } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Card from '../components/ui/Card';
@@ -205,6 +208,8 @@ const ModoDesafio: React.FC = () => {
 
   const comenzarDesafio = () => {
     soundManager.playClick();
+    const versionActiva = localStorage.getItem('versionModeloActiva') || 'v1.0';
+    usePracticaStore.getState().iniciarPractica(versionActiva);
     setEstadoDesafio('jugando');
     setPasoActualIdx(0);
     setErrores(0);
@@ -224,12 +229,24 @@ const ModoDesafio: React.FC = () => {
     const preg = PREGUNTAS_DESAFIO[pasoActualIdx];
     const elegida = preg.opciones[indiceOpcion];
 
+    // Registrar evaluación del paso en el store de IA
+    usePracticaStore.getState().registrarValidacion({
+      numero: preg.pasoId,
+      correcto: elegida.esCorrecta,
+      confianza: elegida.esCorrecta ? 0.98 : 0.45,
+      fuente: 'REGLAS',
+      mensaje: elegida.feedback,
+      errorDetectado: elegida.esCorrecta ? undefined : `FALLO EN SITUACIÓN: ${elegida.texto.slice(0, 45)}`,
+    });
+
     if (elegida.esCorrecta) {
       soundManager.playSuccess();
       setAciertos((prev) => prev + 1);
+      usePracticaStore.getState().avanzarPaso();
     } else {
       soundManager.playError();
       setErrores((prev) => prev + 1);
+      usePracticaStore.getState().registrarError(elegida.feedback);
     }
   };
 
@@ -259,12 +276,26 @@ const ModoDesafio: React.FC = () => {
 
     setUltimoPuntaje(puntajeCalculado);
 
+    usePracticaStore.getState().finalizarPractica();
+
     agregarIntento({
       puntaje: puntajeCalculado,
       tiempoSegundos: tiempoConsumido,
       errores,
       pasosCompletados: aciertos,
       modo: 'desafio',
+    });
+
+    // Registrar en backend Spring Boot con telemetría y metadatos de IA
+    guardarIntento({
+      puntaje: puntajeCalculado,
+      tiempoSegundos: tiempoConsumido,
+      errores,
+      pasosCompletados: aciertos,
+      modo: 'DESAFIO',
+      incluirMetadatosIA: true,
+    }).catch((err) => {
+      console.warn('Fallo al sincronizar intento de desafío en backend (respaldado en localStorage):', err);
     });
 
     setEstadoDesafio('finalizado');
@@ -649,6 +680,12 @@ const ModoDesafio: React.FC = () => {
                 {errores}
               </div>
             </div>
+          </div>
+
+          {/* Versión del modelo IA */}
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+            <Bot size={14} style={{ color: 'var(--color-primary)' }} />
+            <span>Versión del Modelo IA: <strong>{localStorage.getItem('versionModeloActiva') || 'v1.0'}</strong></span>
           </div>
         </div>
       </Modal>
