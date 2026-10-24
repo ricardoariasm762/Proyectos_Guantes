@@ -5,8 +5,12 @@
 export interface Usuario {
   id: string;
   nombre: string;
+  apellido?: string;
+  email?: string;
   semestre: number;
   grupo: string;
+  rol?: 'ESTUDIANTE' | 'DOCENTE' | 'ADMIN';
+  token?: string;
 }
 
 export interface Paso {
@@ -18,7 +22,9 @@ export interface Paso {
   consejoAsepsia: string;
 }
 
-export type ModoPractica = 'guiado' | 'simulacion' | 'desafio';
+export type ModoPractica = 'GUIADO' | 'SIMULACION' | 'DESAFIO' | 'guiado' | 'simulacion' | 'desafio';
+
+export type FuentePrediccion = 'IA' | 'REGLAS' | 'CONSENSO' | 'MIXTO';
 
 export interface IntentoPractica {
   id: string;
@@ -26,9 +32,41 @@ export interface IntentoPractica {
   puntaje: number;
   tiempoSegundos: number;
   errores: number;
+  modo: 'GUIADO' | 'SIMULACION' | 'DESAFIO' | 'guiado' | 'simulacion' | 'desafio';
   pasosCompletados: number;
-  modo: ModoPractica;
+  // Nuevos campos de IA
+  confianzaPromedio?: number;
+  fuentePrediccion?: FuentePrediccion;
+  versionModelo?: string;
+  detalleIA?: string;
   detallesErrores?: string[];
+}
+
+export interface DetallePasoIA {
+  numero: number;
+  correcto: boolean;
+  confianza: number;
+  fuente: FuentePrediccion;
+  mensaje: string;
+  errorDetectado?: string;
+}
+
+export interface DetalleIACompleto {
+  pasos: DetallePasoIA[];
+  confianzaPromedio: number;
+  fuenteDominante: FuentePrediccion;
+  versionModelo: string;
+}
+
+export interface ModeloIA {
+  id: number;
+  version: string;
+  accuracy: number;
+  numClases: number;
+  numMuestras: number;
+  fechaEntrenamiento: string;
+  descripcion?: string;
+  activo: boolean;
 }
 
 export interface ZonaSensible {
@@ -52,4 +90,4 @@ export interface ErrorComun {
 }
 
 export * from './mediapipe';
-
+export * from './ia';
