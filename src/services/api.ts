@@ -4,7 +4,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
-const BACKEND_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 /**
  * Fuente única del token JWT.
@@ -16,7 +16,7 @@ export function obtenerToken(): string | null {
 }
 
 export const api = axios.create({
-  baseURL: BACKEND_BASE_URL,
+  baseURL: API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
