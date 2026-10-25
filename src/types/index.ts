@@ -2,15 +2,27 @@
 // Proyecto: Fortalecimiento de competencias en postura de guantes quirúrgicos
 // Universidad Cooperativa de Colombia - Campus Pasto
 
+export type Rol = 'ESTUDIANTE' | 'DOCENTE' | 'ADMIN';
+
 export interface Usuario {
-  id: string;
+  id: number;
   nombre: string;
   apellido?: string;
-  email?: string;
-  semestre: number;
-  grupo: string;
-  rol?: 'ESTUDIANTE' | 'DOCENTE' | 'ADMIN';
+  email: string;
+  semestre?: number;
+  grupo?: string;
+  rol: Rol;
+  fechaRegistro: string;
   token?: string;
+}
+
+export interface UsuarioRequest {
+  nombre: string;
+  email: string;
+  password?: string;
+  semestre?: number;
+  grupo?: string;
+  rol: Rol;
 }
 
 export interface Paso {
