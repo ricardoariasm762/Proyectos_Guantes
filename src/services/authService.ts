@@ -68,13 +68,14 @@ export function mapearAuthAUsuario(
   metadataExtra?: { semestre?: number; grupo?: string }
 ): Usuario {
   return {
-    id: String(authResp.id),
+    id: Number(authResp.id),
     nombre: `${authResp.nombre} ${authResp.apellido}`.trim(),
     apellido: authResp.apellido,
     email: authResp.email,
     semestre: metadataExtra?.semestre ?? 5,
     grupo: metadataExtra?.grupo ?? 'A',
     rol: authResp.rol,
+    fechaRegistro: new Date().toISOString(),
     token: authResp.token,
   };
 }
