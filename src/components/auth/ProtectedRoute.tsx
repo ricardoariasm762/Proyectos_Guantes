@@ -28,4 +28,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, rolReq
   return <>{children}</>;
 };
 
+export const RutaProtegida = ProtectedRoute;
+
 export default ProtectedRoute;

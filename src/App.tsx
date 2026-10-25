@@ -4,7 +4,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { ProtectedRoute, RutaProtegida } from './components/auth/ProtectedRoute';
 import Login from './pages/Login';
 import { useVersionModelo } from './hooks/useVersionModelo';
 
@@ -18,6 +18,7 @@ const ModoDesafio = lazy(() => import('./pages/ModoDesafio'));
 const Perfil = lazy(() => import('./pages/Perfil'));
 const RecolectorDatos = lazy(() => import('./pages/RecolectorDatos'));
 const AdminModelosIA = lazy(() => import('./pages/AdminModelosIA'));
+const AdminUsuarios = lazy(() => import('./pages/AdminUsuarios'));
 
 function SincronizadorVersionModelo() {
   // Consulta y almacena la versión activa del modelo IA en localStorage al iniciar la app
@@ -55,6 +56,10 @@ function App() {
             <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
 
             {/* Rutas con acceso exclusivo para usuarios con rol ADMIN */}
+            <Route
+              path="/admin/usuarios"
+              element={<RutaProtegida rolRequerido="ADMIN"><AdminUsuarios /></RutaProtegida>}
+            />
             <Route
               path="/recolector"
               element={<ProtectedRoute rolRequerido="ADMIN"><RecolectorDatos /></ProtectedRoute>}
