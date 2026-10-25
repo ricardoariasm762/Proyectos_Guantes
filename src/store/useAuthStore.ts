@@ -14,7 +14,7 @@ export interface LoginParams {
   grupo?: string;
   rol?: 'ESTUDIANTE' | 'DOCENTE' | 'ADMIN';
   token?: string;
-  id?: string;
+  id?: number | string;
 }
 
 interface AuthState {
@@ -41,13 +41,14 @@ export const useAuthStore = create<AuthState>()(
         }
 
         const nuevoUsuario: Usuario = {
-          id: datos.id || `usuario_${Date.now()}`,
+          id: typeof datos.id === 'number' ? datos.id : Number(datos.id) || Date.now(),
           nombre: datos.nombre.trim(),
           apellido: datos.apellido?.trim(),
-          email: datos.email?.trim(),
+          email: datos.email?.trim() || 'usuario@ucc.edu.co',
           semestre: Number(datos.semestre ?? 5),
           grupo: (datos.grupo || 'A').trim().toUpperCase(),
           rol: rolAsignado,
+          fechaRegistro: new Date().toISOString(),
           token: datos.token,
         };
 
@@ -63,13 +64,14 @@ export const useAuthStore = create<AuthState>()(
         }
 
         const usuarioMapeado: Usuario = {
-          id: String(authResp.id),
-          nombre: `${authResp.nombre} ${authResp.apellido}`.trim(),
+          id: Number(authResp.id),
+          nombre: `${authResp.nombre || ''} ${authResp.apellido || ''}`.trim() || authResp.email,
           apellido: authResp.apellido,
           email: authResp.email,
           semestre: Number(metadataExtra?.semestre ?? 5),
           grupo: (metadataExtra?.grupo || 'A').trim().toUpperCase(),
           rol: authResp.rol,
+          fechaRegistro: new Date().toISOString(),
           token: authResp.token,
         };
 
