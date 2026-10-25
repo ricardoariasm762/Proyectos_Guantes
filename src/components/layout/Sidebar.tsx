@@ -13,6 +13,7 @@ import {
   Sparkles,
   Database,
   Bot,
+  Users,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -64,6 +65,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
   ];
 
   const adminNavItems = [
+    {
+      to: '/admin/usuarios',
+      label: 'Gestión de Usuarios',
+      icon: Users,
+      badge: 'Admin',
+    },
     {
       to: '/recolector',
       label: 'Recolector de datos',
