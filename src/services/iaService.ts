@@ -73,7 +73,19 @@ export class IAService {
       // 2. Inicializar backend de TensorFlow.js (WebGL preferido, CPU fallback)
       await tf.ready();
 
-      // 3. Cargar capas de la red neuronal convolucional/densa
+      // 3. Verificar disponibilidad del archivo model.json antes de delegar a tf.loadLayersModel
+      const testFetch = await fetch(urlModelo);
+      if (!testFetch.ok) {
+        throw new Error(`Archivo de modelo no encontrado en ${urlModelo} (HTTP ${testFetch.status})`);
+      }
+      const contentType = testFetch.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        throw new Error(
+          `La ruta ${urlModelo} respondió con HTML en lugar del modelo JSON. Asegúrate de compilar el modelo con train_model.py.`
+        );
+      }
+
+      // 4. Cargar capas de la red neuronal convolucional/densa
       this.model = await tf.loadLayersModel(urlModelo);
 
       this.isLoaded = true;
@@ -90,7 +102,7 @@ export class IAService {
       this.model = null;
 
       console.warn(
-        'Aviso: Modelo de IA aún no disponible en /modelo_tfjs/. El simulador operará con validación por Reglas Clínicas.',
+        'Aviso: Modelo de IA en contingencia. El simulador operará con validación por Reglas Clínicas.',
         mensaje
       );
       return false;
