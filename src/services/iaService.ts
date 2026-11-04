@@ -6,6 +6,15 @@ import type { PrediccionIA, LabelTecnica } from '../types/ia';
 import { TODAS_LAS_LABELS } from '../types/ia';
 
 /**
+ * Indica si la carga del modelo TensorFlow.js está habilitada mediante VITE_USAR_MODELO_IA.
+ * Por defecto es "false" para operar exclusivamente con reglas clínicas mientras el modelo sea sintético.
+ */
+export function estaModeloIAHabilitado(): boolean {
+  const valor = String(import.meta.env.VITE_USAR_MODELO_IA ?? 'false').trim().toLowerCase();
+  return valor === 'true';
+}
+
+/**
  * Servicio encargado de gestionar el modelo de Machine Learning en el navegador.
  * Realiza inferencia local privada (el video y las features nunca salen del cliente).
  */
@@ -31,8 +40,8 @@ export class IAService {
 
   /**
    * Carga el modelo TF.js y el archivo de etiquetas desde la carpeta public/.
-   * Si los archivos no existen aún en el servidor local, entra en modo contingencia
-   * seguro permitiendo que el sistema funcione con solo reglas clínicas.
+   * Si VITE_USAR_MODELO_IA es "false" (por defecto) o si los archivos no existen,
+   * permite que el sistema opere exclusivamente con reglas clínicas.
    *
    * @param urlModelo Ruta al archivo model.json exportado de TensorFlow
    * @param urlLabels Ruta al archivo labels.json con el orden de las clases
@@ -41,6 +50,12 @@ export class IAService {
     urlModelo = '/modelo_tfjs/model.json',
     urlLabels = '/modelo_tfjs/labels.json'
   ): Promise<boolean> {
+    if (!estaModeloIAHabilitado()) {
+      this.dispose();
+      this.errorCarga = null;
+      return false;
+    }
+
     if (this.isLoaded && this.model) {
       return true;
     }

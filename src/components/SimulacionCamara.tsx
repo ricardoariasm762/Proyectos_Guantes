@@ -16,6 +16,7 @@ import { calcularPuntajeSimulacion } from '../utils/puntajeSimulacion';
 import { useProgresoStore } from '../store/useProgresoStore';
 import { usePracticaStore } from '../store/usePracticaStore';
 import { registrarIntento } from '../services/intentoService';
+import { Badge } from './ui/Badge';
 
 export interface ResultadoSesion {
   puntaje: number;
@@ -132,7 +133,22 @@ export const SimulacionCamara: React.FC<SimulacionCamaraProps> = ({ onIntentoGua
   return (
     <section className="simulacion-camara" aria-labelledby="titulo-simulacion-camara">
       <header className="simulacion-camara-encabezado">
-        <h1 id="titulo-simulacion-camara">Simulación por cámara</h1>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+          }}
+        >
+          <h1 id="titulo-simulacion-camara">Simulación por cámara</h1>
+          <Badge variant={ia.isIAReady ? 'primary' : 'neutral'} size="sm">
+            {ia.isIAReady
+              ? 'Evaluación híbrida (reglas + IA)'
+              : 'Evaluación por reglas clínicas'}
+          </Badge>
+        </div>
         <p>
           Coloca tus manos frente a la cámara y sigue los seis pasos de la técnica. La validación se
           ejecuta en tu dispositivo.
