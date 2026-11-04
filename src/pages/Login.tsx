@@ -15,8 +15,6 @@ import {
   Lock,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
-  ShieldAlert,
 } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -34,13 +32,12 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { estaAutenticado, loginConJwt, login } = useAuthStore();
+  const { estaAutenticado, usuario, loginConJwt } = useAuthStore();
   const [errorServidor, setErrorServidor] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -50,25 +47,13 @@ const Login: React.FC = () => {
     },
   });
 
-  // Redirigir al dashboard si ya está autenticado
+  // Redirigir al dashboard solo si ya está autenticado con un token válido
   useEffect(() => {
-    if (estaAutenticado) {
+    if (estaAutenticado && usuario?.token) {
       const destino = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/dashboard';
       navigate(destino, { replace: true });
     }
-  }, [estaAutenticado, navigate, location]);
-
-  const rellenarEstudiantePrueba = () => {
-    setValue('email', 'estudiante@ucc.edu.co');
-    setValue('password', 'estudiante123');
-    setErrorServidor(null);
-  };
-
-  const rellenarAdminPrueba = () => {
-    setValue('email', 'admin@ucc.edu.co');
-    setValue('password', 'admin123456');
-    setErrorServidor(null);
-  };
+  }, [estaAutenticado, usuario?.token, navigate, location]);
 
   const onSubmit = async (data: LoginFormData) => {
     setErrorServidor(null);
@@ -81,10 +66,15 @@ const Login: React.FC = () => {
         password: data.password,
       });
 
+      if (!authResp?.token) {
+        setErrorServidor('Respuesta de autenticación inválida: el servidor no emitió un token.');
+        return;
+      }
+
       // 2. Guardar token en localStorage y usuario con rol verificado en useAuthStore
       loginConJwt(authResp);
 
-      // 3. Redirigir al dashboard
+      // 3. Redirigir al dashboard o ruta solicitada
       const destino = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/dashboard';
       navigate(destino, { replace: true });
     } catch (err: unknown) {
@@ -96,36 +86,26 @@ const Login: React.FC = () => {
 
       const status = errorAxios.response?.status;
 
-      // Fallback de resiliencia para demos si el backend no está disponible o las credenciales demo se prueban offline
-      const esAdminDemo = emailNormalizado === 'admin@ucc.edu.co' && data.password === 'admin123456';
-      const esEstudianteDemo = emailNormalizado === 'estudiante@ucc.edu.co' && data.password === 'estudiante123';
-
-      if ((!errorAxios.response || errorAxios.code === 'ERR_NETWORK' || status === 401 || status === 404) && (esAdminDemo || esEstudianteDemo)) {
-        login({
-          nombre: esAdminDemo ? 'Administrador Sistema' : 'María Camila Narváez',
-          email: emailNormalizado,
-          semestre: 5,
-          grupo: esAdminDemo ? 'FAC-SALUD' : 'B-Pasto',
-          rol: esAdminDemo ? 'ADMIN' : 'ESTUDIANTE',
-        });
-        const destino = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/dashboard';
-        navigate(destino, { replace: true });
-        return;
-      }
-
-      if (status === 401 || status === 403 || status === 400) {
+      if (status === 400 || status === 401 || status === 403) {
         const mensajeBackend =
           errorAxios.response?.data?.mensaje ||
           errorAxios.response?.data?.message ||
-          'Credenciales incorrectas. Verifica tu correo y contraseña.';
+          'Credenciales inválidas. Verifica tu correo y contraseña.';
         setErrorServidor(mensajeBackend);
+        return;
+      }
+
+      if (!errorAxios.response || errorAxios.code === 'ERR_NETWORK' || errorAxios.code === 'ECONNABORTED' || (status !== undefined && status >= 500)) {
+        setErrorServidor(
+          'Servidor no disponible en este momento. Verifica tu conexión de red o inténtalo más tarde.'
+        );
         return;
       }
 
       setErrorServidor(
         errorAxios.response?.data?.mensaje ||
         errorAxios.response?.data?.message ||
-        'No se pudo conectar con el servidor central. Verifica tu conexión a la red.'
+        'No se pudo completar el inicio de sesión con el servidor.'
       );
     }
   };
@@ -194,28 +174,6 @@ const Login: React.FC = () => {
             <CheckCircle2 size={18} />
             <span>{isSubmitting ? 'Autenticando...' : 'Ingresar al Simulador'}</span>
           </button>
-
-          <div className="quick-fill-group">
-            <button
-              type="button"
-              className="btn-quick-fill"
-              onClick={rellenarEstudiantePrueba}
-              title="Autocompletar estudiante de prueba"
-            >
-              <Sparkles size={14} />
-              <span>Estudiante Demo</span>
-            </button>
-
-            <button
-              type="button"
-              className="btn-quick-fill-admin"
-              onClick={rellenarAdminPrueba}
-              title="Autocompletar credenciales de Administrador"
-            >
-              <ShieldAlert size={14} />
-              <span>Admin Demo</span>
-            </button>
-          </div>
         </form>
 
         <div className="login-footer-info">

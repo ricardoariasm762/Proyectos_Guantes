@@ -14,10 +14,11 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, rolRequerido }) => {
   const estaAutenticado = useAuthStore((state) => state.estaAutenticado);
+  const token = useAuthStore((state) => state.usuario?.token);
   const rol = useAuthStore((state) => state.usuario?.rol);
   const location = useLocation();
 
-  if (!estaAutenticado) {
+  if (!estaAutenticado || !token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

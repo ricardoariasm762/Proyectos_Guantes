@@ -20,7 +20,6 @@ export interface LoginParams {
 interface AuthState {
   usuario: Usuario | null;
   estaAutenticado: boolean;
-  login: (datos: LoginParams) => void;
   loginConJwt: (authResp: AuthBackendResponse, metadataExtra?: { semestre?: number; grupo?: string }) => void;
   logout: () => void;
   actualizarUsuario: (datos: Partial<Omit<Usuario, 'id'>>) => void;
@@ -32,36 +31,12 @@ export const useAuthStore = create<AuthState>()(
       usuario: null,
       estaAutenticado: false,
 
-      login: (datos) => {
-        // El rol debe provenir de credenciales verificadas; por defecto es ESTUDIANTE
-        const rolAsignado: 'ESTUDIANTE' | 'DOCENTE' | 'ADMIN' = datos.rol || 'ESTUDIANTE';
-
-        if (datos.token) {
-          localStorage.setItem('token', datos.token);
-        }
-
-        const nuevoUsuario: Usuario = {
-          id: typeof datos.id === 'number' ? datos.id : Number(datos.id) || Date.now(),
-          nombre: datos.nombre.trim(),
-          apellido: datos.apellido?.trim(),
-          email: datos.email?.trim() || 'usuario@ucc.edu.co',
-          semestre: Number(datos.semestre ?? 5),
-          grupo: (datos.grupo || 'A').trim().toUpperCase(),
-          rol: rolAsignado,
-          fechaRegistro: new Date().toISOString(),
-          token: datos.token,
-        };
-
-        set({
-          usuario: nuevoUsuario,
-          estaAutenticado: true,
-        });
-      },
-
       loginConJwt: (authResp, metadataExtra) => {
-        if (authResp.token) {
-          localStorage.setItem('token', authResp.token);
+        if (!authResp?.token) {
+          throw new Error('No se puede iniciar sesión sin un token JWT válido del backend.');
         }
+
+        localStorage.setItem('token', authResp.token);
 
         const usuarioMapeado: Usuario = {
           id: Number(authResp.id),
