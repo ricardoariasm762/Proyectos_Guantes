@@ -1,15 +1,15 @@
-// Guardia de rutas protegidas con control opcional de rol
-// Redirige al login si no hay sesión activa y al dashboard si el rol no coincide
+// Guardia de rutas protegidas con control opcional de uno o varios roles
+// Redirige al login si no hay sesión activa y a la vista principal si el rol no está autorizado
 // Universidad Cooperativa de Colombia - Campus Pasto
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
-import type { Usuario } from '../../types';
+import type { Rol } from '../../types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  rolRequerido?: Usuario['rol'];
+  rolRequerido?: Rol | ReadonlyArray<Rol>;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, rolRequerido }) => {
@@ -22,8 +22,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, rolReq
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (rolRequerido && rol !== rolRequerido) {
-    return <Navigate to="/dashboard" replace />;
+  if (rolRequerido) {
+    const rolesPermitidos: ReadonlyArray<Rol> = Array.isArray(rolRequerido)
+      ? rolRequerido
+      : [rolRequerido as Rol];
+
+    if (!rol || !rolesPermitidos.includes(rol)) {
+      const rutaInicio = rol === 'DOCENTE' ? '/docente' : '/dashboard';
+      return <Navigate to={rutaInicio} replace />;
+    }
   }
 
   return <>{children}</>;

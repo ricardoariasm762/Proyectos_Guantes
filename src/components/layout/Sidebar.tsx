@@ -14,6 +14,7 @@ import {
   Database,
   Bot,
   Users,
+  GraduationCap,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -64,6 +65,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
     },
   ];
 
+  const docenteNavItems = [
+    {
+      to: '/docente',
+      label: 'Seguimiento Docente',
+      icon: GraduationCap,
+      badge: 'Docente',
+    },
+  ];
+
   const adminNavItems = [
     {
       to: '/admin/usuarios',
@@ -85,7 +95,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onCloseMobile }) => {
     },
   ];
 
-  const navItems = usuario?.rol === 'ADMIN' ? [...baseNavItems, ...adminNavItems] : baseNavItems;
+  const navItems = [
+    ...baseNavItems,
+    ...(usuario?.rol === 'DOCENTE' || usuario?.rol === 'ADMIN' ? docenteNavItems : []),
+    ...(usuario?.rol === 'ADMIN' ? adminNavItems : []),
+  ];
 
   return (
     <>

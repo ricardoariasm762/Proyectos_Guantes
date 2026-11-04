@@ -19,6 +19,7 @@ const Perfil = lazy(() => import('./pages/Perfil'));
 const RecolectorDatos = lazy(() => import('./pages/RecolectorDatos'));
 const AdminModelosIA = lazy(() => import('./pages/AdminModelosIA'));
 const AdminUsuarios = lazy(() => import('./pages/AdminUsuarios'));
+const PanelDocente = lazy(() => import('./pages/PanelDocente'));
 
 function SincronizadorVersionModelo() {
   // Consulta y almacena la versión activa del modelo IA en localStorage al iniciar la app
@@ -54,6 +55,16 @@ function App() {
             <Route path="/simulacion-camara" element={<ProtectedRoute><SimulacionCamaraPage /></ProtectedRoute>} />
             <Route path="/desafio" element={<ProtectedRoute><ModoDesafio /></ProtectedRoute>} />
             <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+
+            {/* Ruta protegida de seguimiento académico para DOCENTE y ADMIN */}
+            <Route
+              path="/docente"
+              element={
+                <ProtectedRoute rolRequerido={['DOCENTE', 'ADMIN']}>
+                  <PanelDocente />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Rutas con acceso exclusivo para usuarios con rol ADMIN */}
             <Route
