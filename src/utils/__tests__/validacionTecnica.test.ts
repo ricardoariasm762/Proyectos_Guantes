@@ -17,6 +17,15 @@ import {
 import { calcularPrecision, formatearFecha, formatearTiempo } from '../puntuacion';
 import { calcularPuntajeSimulacion, nivelDesempeno } from '../puntajeSimulacion';
 import {
+  UMBRAL_DEDOS_JUNTOS,
+  UMBRAL_DEDOS_JUNTOS_PASO_4,
+  UMBRAL_DISTANCIA_LAVADO,
+  UMBRAL_EXTENSION_DEDOS,
+  UMBRAL_EXTENSION_PULGAR,
+  UMBRAL_PINZA_BOLSILLO,
+  UMBRAL_PINZA_BORDE,
+} from '../umbralesClinicos';
+import {
   clasificarManosPorLateralidad,
   validarPaso1Lavado,
   validarPaso2Secado,
@@ -219,6 +228,14 @@ describe('validacionTecnica - reglas clínicas de los pasos 1 a 6 y casos límit
       expect(nivelDesempeno(900)).toBe('excelente');
       expect(nivelDesempeno(700)).toBe('bueno');
       expect(nivelDesempeno(400)).toBe('repasar');
+
+      expect(UMBRAL_DISTANCIA_LAVADO).toBe(0.15);
+      expect(UMBRAL_EXTENSION_DEDOS).toBe(160);
+      expect(UMBRAL_EXTENSION_PULGAR).toBe(150);
+      expect(UMBRAL_PINZA_BORDE).toBe(0.08);
+      expect(UMBRAL_DEDOS_JUNTOS).toBe(0.05);
+      expect(UMBRAL_DEDOS_JUNTOS_PASO_4).toBe(0.06);
+      expect(UMBRAL_PINZA_BOLSILLO).toBe(0.09);
     });
   });
 });

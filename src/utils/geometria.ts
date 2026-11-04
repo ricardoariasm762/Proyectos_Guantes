@@ -6,6 +6,12 @@ import {
   type Landmark3D,
   type ManoLandmarks,
 } from '../types/mediapipe';
+import {
+  UMBRAL_DEDOS_JUNTOS,
+  UMBRAL_EXTENSION_DEDOS,
+  UMBRAL_EXTENSION_PULGAR,
+  UMBRAL_PINZA_BORDE,
+} from './umbralesClinicos';
 
 /**
  * Calcula la distancia euclidiana 3D entre dos landmarks normalizados.
@@ -95,7 +101,7 @@ export function dedoExtendido(landmarks: ManoLandmarks, baseIndex: number): bool
       landmarks[PuntosMano.PULGAR_IP],
       landmarks[PuntosMano.PULGAR_TIP]
     );
-    return angulo > 150;
+    return angulo > UMBRAL_EXTENSION_PULGAR;
   }
 
   // Dedos convencionales: Base = MCP, Medio = PIP, Punta = TIP
@@ -106,7 +112,7 @@ export function dedoExtendido(landmarks: ManoLandmarks, baseIndex: number): bool
   if (!mcp || !pip || !tip) return false;
 
   const angulo = calcularAngulo(mcp, pip, tip);
-  return angulo > 160;
+  return angulo > UMBRAL_EXTENSION_DEDOS;
 }
 
 /**
@@ -168,7 +174,7 @@ export function todosDedosExtendidos(landmarks: ManoLandmarks): boolean {
  * @param umbral Distancia euclidiana máxima permitida (por defecto 0.08)
  * @returns true si la distancia pulgar-índice es menor al umbral
  */
-export function esGestoPinza(landmarks: ManoLandmarks, umbral = 0.08): boolean {
+export function esGestoPinza(landmarks: ManoLandmarks, umbral = UMBRAL_PINZA_BORDE): boolean {
   if (!landmarks || landmarks.length < 21) return false;
 
   const pulgarTip = landmarks[PuntosMano.PULGAR_TIP];
@@ -186,9 +192,9 @@ export function esGestoPinza(landmarks: ManoLandmarks, umbral = 0.08): boolean {
  *
  * @param landmarks Landmarks de la mano
  * @param umbral Distancia máxima consecutiva entre puntas (por defecto 0.05)
- * @returns true si todas las distancias consecutivas entre puntas son menores al umbral
+ * @returns true si todas las distancias consecutivas entre puntas son menores o iguales al umbral
  */
-export function dedosJuntos(landmarks: ManoLandmarks, umbral = 0.05): boolean {
+export function dedosJuntos(landmarks: ManoLandmarks, umbral = UMBRAL_DEDOS_JUNTOS): boolean {
   if (!landmarks || landmarks.length < 21) return false;
 
   const tips = [

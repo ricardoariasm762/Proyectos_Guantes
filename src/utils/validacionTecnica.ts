@@ -14,6 +14,13 @@ import {
   dedosJuntos,
   distanciaMinimaEntrePuntas,
 } from './geometria';
+import {
+  UMBRAL_DEDOS_JUNTOS_PASO_4,
+  UMBRAL_DISTANCIA_LAVADO,
+  UMBRAL_EXTENSION_DEDOS,
+  UMBRAL_PINZA_BOLSILLO,
+  UMBRAL_PINZA_BORDE,
+} from './umbralesClinicos';
 import { PuntosMano } from '../types/mediapipe';
 
 /**
@@ -80,14 +87,14 @@ export function validarPaso1Lavado(
   const manoB = manosLandmarks[1];
 
   const distMin = distanciaMinimaEntrePuntas(manoA, manoB);
-  const estanFrotandose = distMin < 0.15;
+  const estanFrotandose = distMin < UMBRAL_DISTANCIA_LAVADO;
 
   if (!estanFrotandose) {
     return {
       correcto: false,
       mensaje: 'Entrecruza los dedos y frota palmas y espacios interdigitales.',
       detalles: [
-        `Distancia entre manos: ${(distMin * 100).toFixed(1)} cm normalizados (Meta: < 15.0)`,
+        `Distancia entre manos: ${(distMin * 100).toFixed(1)} cm normalizados (Meta: < ${(UMBRAL_DISTANCIA_LAVADO * 100).toFixed(1)})`,
       ],
     };
   }
@@ -95,7 +102,7 @@ export function validarPaso1Lavado(
   return {
     correcto: true,
     mensaje: '¡Lavado correcto! Mantén la fricción interdigital sobre el nivel de los codos.',
-    detalles: ['Distancia interdigital óptima (< 0.15)', 'Ambas manos visibles'],
+    detalles: [`Distancia interdigital óptima (< ${UMBRAL_DISTANCIA_LAVADO})`, 'Ambas manos visibles'],
   };
 }
 
@@ -131,14 +138,14 @@ export function validarPaso2Secado(
   return {
     correcto: true,
     mensaje: '¡Postura de secado correcta! Dedos extendidos, secando de distal a proximal.',
-    detalles: ['Ambas manos con dedos extendidos > 160°'],
+    detalles: [`Ambas manos con dedos extendidos > ${UMBRAL_EXTENSION_DEDOS}°`],
   };
 }
 
 /**
  * PASO 3 - Tomar guante derecho por el borde doblado:
  * - Mano que sujeta (izquierda) haciendo pinza: pulgar (4) e índice (8) a distancia < 0.08.
- * - Pulgar e índice con articulaciones extendidas.
+ * - Al menos uno de los dedos de la pinza (pulgar o índice) con articulación extendida.
  */
 export function validarPaso3TomarGuanteDerecho(
   manosLandmarks: ManoLandmarks[],
@@ -160,7 +167,7 @@ export function validarPaso3TomarGuanteDerecho(
   // La mano que debe hacer pinza es la izquierda (para tomar el guante derecho)
   const manoPinza = manoIzquierda || manoDerecha || manosLandmarks[0];
 
-  const pinzaActiva = esGestoPinza(manoPinza, 0.08);
+  const pinzaActiva = esGestoPinza(manoPinza, UMBRAL_PINZA_BORDE);
   const pulgarExtendido = dedoExtendido(manoPinza, PuntosMano.PULGAR_MCP);
   const indiceExtendido = dedoExtendido(manoPinza, PuntosMano.INDICE_MCP);
 
@@ -174,7 +181,7 @@ export function validarPaso3TomarGuanteDerecho(
       correcto: false,
       mensaje: 'Haz pinza con el pulgar e índice sobre la cara interna del doblez.',
       detalles: [
-        `Apertura de pinza: ${(distanciaPinza * 100).toFixed(1)} (Meta: < 8.0)`,
+        `Apertura de pinza: ${(distanciaPinza * 100).toFixed(1)} (Meta: < ${(UMBRAL_PINZA_BORDE * 100).toFixed(1)})`,
       ],
     };
   }
@@ -199,7 +206,7 @@ export function validarPaso3TomarGuanteDerecho(
 
 /**
  * PASO 4 - Introducir mano derecha sin tocar exterior:
- * - Mano derecha con dedos juntos (distancia entre puntas consecutivas < 0.05).
+ * - Mano derecha con dedos juntos (distancia entre puntas consecutivas <= UMBRAL_DEDOS_JUNTOS_PASO_4 = 0.06; umbral base UMBRAL_DEDOS_JUNTOS = 0.05).
  * - Mano derecha con dedos extendidos.
  */
 export function validarPaso4IntroducirManoDerecha(
@@ -221,7 +228,7 @@ export function validarPaso4IntroducirManoDerecha(
 
   const manoObjetivo = manoDerecha || manoIzquierda || manosLandmarks[0];
 
-  const puntasJuntas = dedosJuntos(manoObjetivo, 0.06); // Tolerancia 0.06
+  const puntasJuntas = dedosJuntos(manoObjetivo, UMBRAL_DEDOS_JUNTOS_PASO_4);
   const dedosEstanExtendidos = todosDedosExtendidos(manoObjetivo);
 
   if (!dedosEstanExtendidos) {
@@ -249,7 +256,7 @@ export function validarPaso4IntroducirManoDerecha(
 
 /**
  * PASO 5 - Repetir con mano izquierda (Bolsillo estéril):
- * - Mano derecha (ya enguantada) en pinza con pulgar e índice a distancia < 0.08.
+ * - Mano derecha (ya enguantada) en pinza con pulgar e índice a distancia < 0.09 (UMBRAL_PINZA_BOLSILLO).
  * - Simula la entrada de los 4 dedos por debajo del puño estéril con pulgar en abducción.
  */
 export function validarPaso5RepetirManoIzquierda(
@@ -276,14 +283,14 @@ export function validarPaso5RepetirManoIzquierda(
     manoEnguantada[PuntosMano.PULGAR_TIP],
     manoEnguantada[PuntosMano.INDICE_TIP]
   );
-  const esPinzaBolsillo = distanciaPinza < 0.09;
+  const esPinzaBolsillo = distanciaPinza < UMBRAL_PINZA_BOLSILLO; // VALIDAR con expertos clínicos
 
   if (!esPinzaBolsillo) {
     return {
       correcto: false,
       mensaje: 'Introduce los dedos de la mano derecha bajo el doblez del guante izquierdo (bolsillo estéril).',
       detalles: [
-        `Distancia pulgar-índice: ${(distanciaPinza * 100).toFixed(1)} (Meta: < 9.0)`,
+        `Distancia pulgar-índice: ${(distanciaPinza * 100).toFixed(1)} (Meta: < ${(UMBRAL_PINZA_BOLSILLO * 100).toFixed(1)})`,
       ],
     };
   }
@@ -297,12 +304,13 @@ export function validarPaso5RepetirManoIzquierda(
 
 /**
  * PASO 6 - Ajustar puños manteniendo esterilidad:
- * - Ambas manos visibles y completamente extendidas.
- * - Ambas manos calzadas por encima del nivel de la cintura.
+ * - Verifica que ambas manos estén visibles en el encuadre y con los cinco dedos completamente extendidos.
+ * - No evalúa actualmente la altura vertical respecto a la cintura (requiere referencia anatómica del tronco).
  */
 export function validarPaso6AjustarPunos(
   manosLandmarks: ManoLandmarks[]
 ): ResultadoValidacion {
+  // TODO: Validar que ambas manos permanezcan por encima del nivel de la cintura cuando se disponga de referencia anatómica calibrada (p. ej. Pose Landmarker).
   if (!manosLandmarks || manosLandmarks.length < 2) {
     return {
       correcto: false,
