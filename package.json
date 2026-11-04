@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.provider=v8 --coverage.include=src/utils/**/*.ts --coverage.exclude=src/utils/__tests__/**",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -37,6 +38,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
+    "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.8.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",

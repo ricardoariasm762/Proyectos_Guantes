@@ -8,6 +8,8 @@ dist-ssr/
 coverage/
 ml/reportes/
 ml/*.keras
+__pycache__/
+*.py[cod]
 
 # Environment variables
 .env
