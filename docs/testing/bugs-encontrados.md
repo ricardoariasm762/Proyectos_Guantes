@@ -31,7 +31,7 @@
 - **Resultado Esperado:** El motor de base de datos debe eliminar en cascada todas las filas asociadas en `intentos_practica`, `pasos_completados` y `progresos` sin dejar tuplas huérfanas.
 - **Resultado Obtenido:** Error PostgreSQL `23503: foreign_key_violation` con mensaje:  
   `ERROR: update o delete en «usuarios» viola la llave foránea «fkl5p8og4xym3mkqwofipoik5fb» en la tabla «intentos_practica»`.
-- **Evidencia:** [DB-03-cascada-usuarios.txt](file:///c:/Proyecto_grado/docs/testing/evidencias/db/DB-03-cascada-usuarios.txt)
+- **Evidencia:** [DB-03-cascada-usuarios.txt](./evidencias/db/DB-03-cascada-usuarios.txt)
 - **Ambiente:**
   - Base de Datos: PostgreSQL 18.3 x64 Windows
   - Esquema: `guantes_db` (public)
@@ -71,7 +71,7 @@
 - **Resultado Esperado:** HTTP `204 No Content` eliminando el intento y recalculando el progreso, o HTTP `405 Method Not Allowed` en caso de inmutabilidad estricta.
 - **Resultado Obtenido:** HTTP `500 Internal Server Error` con el payload:  
   `{"path":"/api/intentos/3","error":"Error interno del servidor","message":"Request method 'DELETE' is not supported","status":500}`.
-- **Evidencia:** [API-10-eliminar-intento.txt](file:///c:/Proyecto_grado/docs/testing/evidencias/api/API-10-eliminar-intento.txt)
+- **Evidencia:** [API-10-eliminar-intento.txt](./evidencias/api/API-10-eliminar-intento.txt)
 - **Ambiente:** Spring Boot 3.2, Java 21, Tomcat 11
 - **Causa Raíz:**
   1. `IntentoController` carecía del método con `@DeleteMapping("/{id}")`.
@@ -97,7 +97,7 @@
   1. Enviar una petición HTTP `POST /api/intentos` con payload que incluya `"modoPractica": "SIMULACION"` o `"modoPractica": "DESAFIO"` (modos utilizados en la interfaz de React).
 - **Resultado Esperado:** HTTP `201 Created` aceptando el modo clínico o HTTP `400 Bad Request` si el valor no fuera parte del dominio.
 - **Resultado Obtenido:** HTTP `500 Internal Server Error` debido a fallo de deserialización en Jackson (`Cannot deserialize value of type ModoPractica from String "SIMULACION"`).
-- **Evidencia:** [NIVEL-4-estres-y-casos-limite.txt](file:///c:/Proyecto_grado/docs/testing/evidencias/integracion/NIVEL-4-estres-y-casos-limite.txt)
+- **Evidencia:** [NIVEL-4-estres-y-casos-limite.txt](./evidencias/integracion/NIVEL-4-estres-y-casos-limite.txt)
 - **Ambiente:** Spring Boot 3.2, PostgreSQL 18, React 19
 - **Causa Raíz:**
   1. El enum `ModoPractica.java` en Spring Boot solo contemplaba `GUIADO`, `EVALUACION`, `LIBRE`, `ENTRENAMIENTO`, mientras que el frontend emitía `SIMULACION` y `DESAFIO`.

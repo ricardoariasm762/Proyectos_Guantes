@@ -123,14 +123,14 @@ Durante el ciclo de pruebas E2E se registraron, diagnosticaron y cerraron tres (
 
 ## 7. Anexos y Evidencias Técnicas
 
-1. **Plan de Pruebas Maestro:** [plan-pruebas.md](file:///c:/Proyecto_grado/docs/testing/plan-pruebas.md)
-2. **Catálogo Detallado de 34 Casos:** [casos-prueba.md](file:///c:/Proyecto_grado/docs/testing/casos-prueba.md)
-3. **Bitácora Consolidada de Resultados:** [resultados.md](file:///c:/Proyecto_grado/docs/testing/resultados.md)
-4. **Registro de Bugs y Mitigaciones:** [bugs-encontrados.md](file:///c:/Proyecto_grado/docs/testing/bugs-encontrados.md)
-5. **Métricas de Usabilidad SUS:** [metricas-usabilidad.md](file:///c:/Proyecto_grado/docs/testing/metricas-usabilidad.md)
-6. **Colección Postman Exportable:** [coleccion-postman.json](file:///c:/Proyecto_grado/docs/testing/coleccion-postman.json)
-7. **Script de Datos Semilla SQL:** [seed-data.sql](file:///c:/Proyecto_grado/docs/testing/seed-data.sql)
+1. **Plan de Pruebas Maestro:** [plan-pruebas.md](./plan-pruebas.md)
+2. **Catálogo Detallado de 34 Casos:** [casos-prueba.md](./casos-prueba.md)
+3. **Bitácora Consolidada de Resultados:** [resultados.md](./resultados.md)
+4. **Registro de Bugs y Mitigaciones:** [bugs-encontrados.md](./bugs-encontrados.md)
+5. **Métricas de Usabilidad SUS:** [metricas-usabilidad.md](./metricas-usabilidad.md)
+6. **Colección Postman Exportable:** [coleccion-postman.json](./coleccion-postman.json)
+7. **Script de Datos Semilla SQL:** [seed-data.sql](./seed-data.sql)
 8. **Evidencias Multimedia:**
-   - Video Navegación E2E: [flujo_frontend_e2e.webp](file:///c:/Proyecto_grado/docs/testing/evidencias/integracion/flujo_frontend_e2e.webp)
-   - Capturas de Pantalla: [evidencias/frontend/](file:///c:/Proyecto_grado/docs/testing/evidencias/frontend/)
-   - Logs de API y Base de Datos: [evidencias/api/](file:///c:/Proyecto_grado/docs/testing/evidencias/api/), [evidencias/db/](file:///c:/Proyecto_grado/docs/testing/evidencias/db/)
+   - Video Navegación E2E: [flujo_frontend_e2e.webp](./evidencias/integracion/flujo_frontend_e2e.webp)
+   - Capturas de Pantalla: [evidencias/frontend/](./evidencias/frontend/)
+   - Logs de API y Base de Datos: [evidencias/api/](./evidencias/api/), [evidencias/db/](./evidencias/db/)

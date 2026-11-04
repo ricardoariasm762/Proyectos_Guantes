@@ -27,7 +27,7 @@
 - **Resultado Esperado:** 5 tablas con columnas correspondientes y tipos adecuados para telemetría de IA.
 - **Resultado Obtenido:** Las 5 tablas existen en el esquema `public`. La tabla `intentos_practica` contiene exactamente las 4 columnas de IA requeridas (`confianza_promedio: double precision`, `fuente_prediccion: varchar`, `version_modelo: varchar`, `detalle_ia: text`). Total de 49 columnas mapeadas.
 - **Veredicto:** 🟢 **EXITOSO**
-- **Evidencia:** [DB-01-estructura-tablas.txt](file:///c:/Proyecto_grado/docs/testing/evidencias/db/DB-01-estructura-tablas.txt)
+- **Evidencia:** [DB-01-estructura-tablas.txt](./evidencias/db/DB-01-estructura-tablas.txt)
 
 ---
 
@@ -37,7 +37,7 @@
 - **Resultado Esperado:** Transacción abortada con error de restricción de dominio `usuarios_rol_check`.
 - **Resultado Obtenido:** Inserción abortada arrojando error PostgreSQL `23514: check_violation` al intentar registrar `rol = 'INVALIDO'`. El motor de persistencia protege la integridad del enum JPA.
 - **Veredicto:** 🟢 **EXITOSO**
-- **Evidencia:** [DB-02-constraint-rol.txt](file:///c:/Proyecto_grado/docs/testing/evidencias/db/DB-02-constraint-rol.txt)
+- **Evidencia:** [DB-02-constraint-rol.txt](./evidencias/db/DB-02-constraint-rol.txt)
 
 ---
 
@@ -49,8 +49,8 @@
   - *Inicial:* Identificado defecto `BUG-001` (claves foráneas con `NO ACTION` que bloqueaban el borrado arrojando error 23503).
   - *Post-Mitigación:* Se aplicó migración DDL configurando `ON DELETE CASCADE` en las 3 claves foráneas. La re-ejecución confirmó 0 intentos, 0 progresos y 0 pasos restantes tras eliminar el usuario.
 - **Veredicto:** 🟢 **EXITOSO (Corregido y Validado)**
-- **Evidencia:** [DB-03-cascada-usuarios.txt](file:///c:/Proyecto_grado/docs/testing/evidencias/db/DB-03-cascada-usuarios.txt)
-- **Defecto Asociado:** [BUG-001](file:///c:/Proyecto_grado/docs/testing/bugs-encontrados.md#bug-001) (Cerrado)
+- **Evidencia:** [DB-03-cascada-usuarios.txt](./evidencias/db/DB-03-cascada-usuarios.txt)
+- **Defecto Asociado:** [BUG-001](./bugs-encontrados.md#bug-001) (Cerrado)
 
 ---
 
@@ -74,7 +74,7 @@
 | **`API-14`** | `GET /api/intentos/mis-intentos` (Sin Token) | 403 | 403 | 🟢 EXITOSO | Bloqueado por `SecurityConfig.anyRequest().authenticated()`. |
 | **`API-15`** | `GET /api/intentos/mis-intentos` (Token Inválido) | 403 | 403 | 🟢 EXITOSO | Firma JWT falsificada detectada y rechazada por `JwtAuthenticationFilter`. |
 
-*Todas las respuestas crudas e hipervínculos a los archivos de log se encuentran en el directorio [docs/testing/evidencias/api/](file:///c:/Proyecto_grado/docs/testing/evidencias/api/).*
+*Todas las respuestas crudas e hipervínculos a los archivos de log se encuentran en el directorio [docs/testing/evidencias/api/](./evidencias/api/).*
 
 ---
 
@@ -94,11 +94,11 @@
 | **`INT-10`** | Propagación de Versión Activa de IA | Spring Boot IA Service $\leftrightarrow$ `useVersionModelo` $\leftrightarrow$ BD | 🟢 EXITOSO | La versión activa vigente en backend (`v1.1-2026-11`) se propaga al frontend e indexa todos los nuevos intentos de práctica. |
 
 *Evidencia multimedia interactiva:*
-- 📹 Video de grabación E2E: [flujo_frontend_e2e.webp](file:///c:/Proyecto_grado/docs/testing/evidencias/integracion/flujo_frontend_e2e.webp)
-- 📸 Captura Login: [login_page.png](file:///c:/Proyecto_grado/docs/testing/evidencias/frontend/login_page.png)
-- 📸 Captura Dashboard: [dashboard_page.png](file:///c:/Proyecto_grado/docs/testing/evidencias/frontend/dashboard_page.png)
-- 📸 Captura Panel Admin IA: [admin_modelos_ia_page.png](file:///c:/Proyecto_grado/docs/testing/evidencias/frontend/admin_modelos_ia_page.png)
-- 📄 Log de Validación Cruzada: [INT-01-a-10-consolidado-integracion.txt](file:///c:/Proyecto_grado/docs/testing/evidencias/integracion/INT-01-a-10-consolidado-integracion.txt)
+- 📹 Video de grabación E2E: [flujo_frontend_e2e.webp](./evidencias/integracion/flujo_frontend_e2e.webp)
+- 📸 Captura Login: [login_page.png](./evidencias/frontend/login_page.png)
+- 📸 Captura Dashboard: [dashboard_page.png](./evidencias/frontend/dashboard_page.png)
+- 📸 Captura Panel Admin IA: [admin_modelos_ia_page.png](./evidencias/frontend/admin_modelos_ia_page.png)
+- 📄 Log de Validación Cruzada: [INT-01-a-10-consolidado-integracion.txt](./evidencias/integracion/INT-01-a-10-consolidado-integracion.txt)
 
 ---
 
@@ -115,7 +115,7 @@
 | **`EDGE-04`** | Cámara Bloqueada / Permiso Denegado | Simulación de excepción MediaPipe | 🟢 EXITOSO | Manejo defensivo en `VideoCanvas`: muestra banner amigable con opción de reintento sin congelar UI. |
 | **`EDGE-05`** | Conexión Offline y Respaldo Local | Simulación Network Offline | 🟢 EXITOSO | El intento se respalda en `localStorage` (`intentos_pendientes_sincronizacion`) y se sincroniza al recuperar red. |
 
-*Archivo de log detallado:* [NIVEL-4-estres-y-casos-limite.txt](file:///c:/Proyecto_grado/docs/testing/evidencias/integracion/NIVEL-4-estres-y-casos-limite.txt)
+*Archivo de log detallado:* [NIVEL-4-estres-y-casos-limite.txt](./evidencias/integracion/NIVEL-4-estres-y-casos-limite.txt)
 
 ---
 
@@ -125,4 +125,4 @@
 | :---: | :--- | :--- | :---: | :--- |
 | **`UX-01`** | 3 Estudiantes de Enfermería UCC Pasto (`EST-01`, `EST-02`, `EST-03`) | System Usability Scale (SUS) + Matriz de Desempeño Clínico | 🟢 EXITOSO | - **Tasa de Completitud:** 100% (6/6 pasos clínicos completados).<br>- **Tiempo Promedio:** 168.6 segundos.<br>- **Confianza Media IA:** 89.0% (`CONSENSO`).<br>- **Puntaje Global SUS:** **92.5 / 100** (*Excelente / Percentil 96*). |
 
-*Documento detallado de usabilidad:* [docs/testing/metricas-usabilidad.md](file:///c:/Proyecto_grado/docs/testing/metricas-usabilidad.md)
+*Documento detallado de usabilidad:* [docs/testing/metricas-usabilidad.md](./metricas-usabilidad.md)
