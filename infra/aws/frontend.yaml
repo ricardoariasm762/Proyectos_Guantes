@@ -1,0 +1,258 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Infraestructura de Frontend en AWS para Herramienta Digital Guantes Quirurgicos (UCC).
+  Crea bucket S3 privado con Origin Access Control (OAC), distribucion CloudFront con
+  HTTP/2 y HTTP/3, CloudFront Function para enrutamiento SPA (runtime cloudfront-js-2.0),
+  politica de encabezados de seguridad (Permissions-Policy camera=(self)) y comportamientos
+  de enrutamiento hacia la API de backend en EC2.
+
+Parameters:
+  EC2PublicDns:
+    Type: String
+    Description: >
+      Nombre DNS publico de la instancia EC2 que ejecuta guantes-backend (puerto 8080).
+      Ejemplo: ec2-xx-xx-xx-xx.compute-1.amazonaws.com
+
+Resources:
+  # =========================================================================
+  # 1. Bucket S3 Privado para Alojar la SPA
+  # =========================================================================
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Proyecto
+          Value: GuantesQuirurgicos
+        - Key: Entorno
+          Value: Produccion
+
+  # =========================================================================
+  # 2. Origin Access Control (OAC) y Politica de Bucket
+  # =========================================================================
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-s3-oac
+        Description: Control de acceso de origen para bucket S3 privado de frontend
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${FrontendBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+
+  # =========================================================================
+  # 3. Politica de Encabezados de Respuesta de Seguridad
+  # =========================================================================
+  SecurityHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub ${AWS::StackName}-security-headers
+        Comment: Politica de seguridad con HSTS, X-Content-Type-Options, X-Frame-Options y camara habilitada
+        SecurityHeadersConfig:
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Preload: true
+            Override: true
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: strict-origin-when-cross-origin
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Value: camera=(self)
+              Override: true
+
+  # =========================================================================
+  # 4. CloudFront Function para Enrutamiento SPA
+  # =========================================================================
+  SpaRoutingFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub ${AWS::StackName}-spa-routing
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Reescribe rutas SPA sin extension a /index.html sin alterar APIs
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+            var request = event.request;
+            var uri = request.uri;
+
+            // Dejar pasar rutas del backend sin reescritura
+            if (uri.startsWith('/api') || uri.startsWith('/swagger-ui') || uri.startsWith('/v3/api-docs') || uri.startsWith('/actuator')) {
+                return request;
+            }
+
+            // Reescribir rutas SPA sin extension a /index.html
+            if (!uri.includes('.')) {
+                request.uri = '/index.html';
+            }
+
+            return request;
+        }
+
+  # =========================================================================
+  # 5. Distribucion CloudFront
+  # =========================================================================
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Distribucion CloudFront para Herramienta Guantes UCC
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+        HttpVersion: http2and3
+        Origins:
+          - Id: S3FrontendOrigin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+          - Id: EC2BackendOrigin
+            DomainName: !Ref EC2PublicDns
+            CustomOriginConfig:
+              HTTPPort: 8080
+              HTTPSPort: 8080
+              OriginProtocolPolicy: http-only
+              OriginSSLProtocols:
+                - TLSv1.2
+
+        # Comportamiento por defecto: servir SPA desde S3 con OAC y reescritura
+        DefaultCacheBehavior:
+          TargetOriginId: S3FrontendOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+          ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt SpaRoutingFunction.FunctionMetadata.FunctionARN
+
+        # Comportamientos para endpoints dinamicos hacia el backend EC2
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: EC2BackendOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - POST
+              - PATCH
+              - DELETE
+            CachedMethods:
+              - GET
+              - HEAD
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+
+          - PathPattern: /swagger-ui/*
+            TargetOriginId: EC2BackendOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+
+          - PathPattern: /swagger-ui.html
+            TargetOriginId: EC2BackendOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+
+          - PathPattern: /v3/api-docs*
+            TargetOriginId: EC2BackendOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+
+          - PathPattern: /actuator/*
+            TargetOriginId: EC2BackendOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # AllViewerExceptHostHeader
+
+Outputs:
+  NombreBucket:
+    Description: Nombre del bucket S3 privado que contiene los archivos del frontend
+    Value: !Ref FrontendBucket
+
+  IdDistribucion:
+    Description: ID de la distribucion de Amazon CloudFront
+    Value: !Ref CloudFrontDistribution
+
+  UrlCloudFront:
+    Description: URL publica HTTPS de la distribucion CloudFront
+    Value: !Sub https://${CloudFrontDistribution.DomainName}
