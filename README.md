@@ -142,13 +142,20 @@ El directorio `ml/` contiene el flujo reproducible para entrenar y exportar el c
 
 ---
 
-## 9. Despliegue en Vercel
+## 9. Despliegue en AWS (CloudFront + S3 + EC2 + RDS)
 
-1. Conecta el repositorio en **Vercel** con el preset **Vite** (`Build Command: npm run build`, `Output Directory: dist`).
-2. Configura en *Project Settings → Environment Variables*:
-   - `VITE_API_URL=https://<tu-servicio-backend>.onrender.com`
-   - `VITE_USAR_MODELO_IA=false` (o `true` cuando se despliegue un modelo real validado).
-3. El archivo `vercel.json` conserva acceso directo a `/sw.js`, `/workbox-*.js`, `/registerSW.js`, `/manifest.webmanifest` y activos estáticos antes de redirigir rutas SPA hacia `/index.html`.
+La aplicación se encuentra lista para producción en **Amazon Web Services (AWS)** bajo un único dominio HTTPS seguro servido por **Amazon CloudFront**:
+
+- **Distribución CloudFront (*.cloudfront.net):** Centraliza el tráfico bajo HTTPS obligatorio con HTTP/2 y HTTP/3.
+  - Comportamiento por defecto (`/*`): Conecta al **Bucket S3 privado** mediante **Origin Access Control (OAC)** con firma SigV4, entregando la PWA y los modelos de IA. Incluye una **CloudFront Function** para el enrutamiento de rutas SPA (`/index.html`) sin reescribir archivos estáticos ni endpoints de la API.
+  - Comportamientos dinámicos (`/api/*`, `/swagger-ui/*`, `/v3/api-docs*`, `/actuator/*`): Enrutan directamente a la API Spring Boot en **Amazon EC2** (`t3.small`) en el puerto 8080 con política `CachingDisabled` y paso de cabeceras.
+  - Encabezados de seguridad perimetrales: HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` y `Permissions-Policy: camera=(self)` (esencial para la captura de video de MediaPipe sin advertencias del navegador).
+
+> [!NOTE]
+> **Migración desde Vercel**: El archivo `vercel.json` original fue trasladado a [docs/despliegue/legado/vercel.json](file:///c:/Proyecto_grado/Proyectos_Guantes/docs/despliegue/legado/vercel.json) con fines históricos y para evitar conflictos o duplicidad de enrutamiento con la función de CloudFront.
+
+Para la guía paso a paso completa con comandos de AWS CLI, diagramas, costos y preguntas frecuentes para la sustentación, consulta:
+👉 **[Guía Integral de Despliegue en AWS](file:///c:/Proyecto_grado/Proyectos_Guantes/docs/despliegue/DESPLIEGUE_AWS.md)**.
 
 ---
 
@@ -156,8 +163,19 @@ El directorio `ml/` contiene el flujo reproducible para entrenar y exportar el c
 
 ```text
 Proyectos_Guantes/
+├── .github/
+│   └── workflows/                # Flujo de despliegue continuo (deploy.yml con OIDC)
 ├── docs/
+│   ├── despliegue/
+│   │   ├── DESPLIEGUE_AWS.md     # Guía integral de despliegue en AWS (CloudFront + S3 + EC2 + RDS)
+│   │   └── legado/
+│   │       └── vercel.json       # Configuración histórica de Vercel archivada
 │   └── testing/                  # Plan de pruebas, casos, resultados, bugs y evidencias E2E
+├── infra/
+│   └── aws/
+│       ├── frontend.yaml         # Infraestructura como Código (CloudFormation S3 + CloudFront + OAC)
+│       ├── github-oidc.yaml      # Configuración de IAM OIDC para GitHub Actions
+│       └── scripts/              # Scripts de automatización (desplegar-infra-frontend, publicar-frontend)
 ├── ml/
 │   ├── train_model.py            # Entrenamiento agrupado por persona y generación de reportes
 │   └── requirements.txt          # Dependencias de Python para entrenamiento offline
@@ -177,6 +195,6 @@ Proyectos_Guantes/
 │   ├── types/                    # Contratos TypeScript de dominio, MediaPipe e IA
 │   └── utils/                    # Geometría 3D, umbrales clínicos, reglas, fusión híbrida, features y pruebas
 ├── .env.example                  # Plantilla de variables de entorno
-├── vercel.json                   # Reglas de enrutamiento SPA compatibles con PWA en Vercel
 └── vite.config.ts                # Configuración de Vite 8 y vite-plugin-pwa (Workbox)
 ```
+
