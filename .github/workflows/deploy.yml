@@ -1,0 +1,60 @@
+name: CI/CD Frontend AWS
+
+on:
+  workflow_dispatch:
+  # Descomentar las siguientes lineas para activar ejecucion automatica en PR y push a main:
+  # pull_request:
+  #   branches: [main]
+  # push:
+  #   branches: [main]
+
+permissions:
+  id-token: write   # Necesario para autenticacion OIDC con AWS
+  contents: read
+
+jobs:
+  test:
+    name: Compilar y Ejecutar Pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar pruebas unitarias de frontend
+        run: npx vitest run
+
+      - name: Compilar aplicacion web para produccion
+        run: npm run build
+
+  deploy:
+    name: Publicar Frontend a Amazon S3 y CloudFront
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo fuente
+        uses: actions/checkout@v4
+
+      - name: Autenticar en AWS con OIDC (Sin claves estaticas)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Dar permisos de ejecucion a scripts
+        run: chmod +x infra/aws/scripts/*.sh
+
+      - name: Ejecutar script de publicacion de frontend
+        run: bash infra/aws/scripts/publicar-frontend.sh
+        env:
+          STACK_NAME: ${{ vars.FRONTEND_STACK_NAME || 'guantes-frontend-stack' }}
+          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
