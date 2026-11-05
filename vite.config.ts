@@ -57,10 +57,21 @@ export default defineConfig({
           'modelo_tfjs/*.{json,bin}',
         ],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//, /^\/sw\.js$/, /^\/manifest\.webmanifest$/],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/swagger-ui/,
+          /^\/v3\/api-docs/,
+          /^\/actuator/,
+          /^\/sw\.js$/,
+          /^\/manifest\.webmanifest$/,
+        ],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/api/') ||
+              url.pathname.startsWith('/swagger-ui') ||
+              url.pathname.startsWith('/v3/api-docs') ||
+              url.pathname.startsWith('/actuator'),
             handler: 'NetworkOnly',
           },
         ],
