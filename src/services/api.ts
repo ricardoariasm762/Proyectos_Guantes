@@ -4,7 +4,13 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const envApiUrl = import.meta.env.VITE_API_URL;
+// En producción detrás de CloudFront, frontend y backend comparten el mismo dominio.
+// Una URL base vacía ("") permite peticiones relativas a /api/* sin duplicar dominios.
+// El valor por defecto http://localhost:8080 solo aplica en entorno de desarrollo (DEV).
+const API_URL = typeof envApiUrl === 'string'
+  ? envApiUrl
+  : (import.meta.env.DEV ? 'http://localhost:8080' : '');
 
 /**
  * Fuente única del token JWT.
@@ -12,7 +18,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
  */
 export function obtenerToken(): string | null {
   const usuario = useAuthStore.getState().usuario as { token?: string } | null;
-  return usuario?.token ?? localStorage.getItem('token');
+  return usuario?.token ?? (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null);
 }
 
 export const api = axios.create({
