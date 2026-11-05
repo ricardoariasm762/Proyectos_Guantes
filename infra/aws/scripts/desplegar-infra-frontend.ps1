@@ -1,7 +1,7 @@
 param (
     [string]$StackName = "guantes-frontend-stack",
     [string]$BackendStackName = "guantes-backend-stack",
-    [string]$Region = "us-east-1",
+    [string]$Region = "us-east-2",
     [string]$EC2PublicDns = ""
 )
 

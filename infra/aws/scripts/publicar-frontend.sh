@@ -2,7 +2,7 @@
 set -e
 
 STACK_NAME="${STACK_NAME:-guantes-frontend-stack}"
-REGION="${AWS_REGION:-us-east-1}"
+REGION="${AWS_REGION:-us-east-2}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRONTEND_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
