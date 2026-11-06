@@ -51,7 +51,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
         globPatterns: [
           '**/*.{js,css,html,svg,png,ico,webmanifest}',
-          'frames/v2/*.webp',
+          'frames/v3/*.webp',
           'wasm/*.{js,wasm}',
           'models/hand_landmarker.task',
           'modelo_tfjs/*.{json,bin}',

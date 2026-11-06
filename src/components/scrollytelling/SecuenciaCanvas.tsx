@@ -7,7 +7,7 @@ import { TOTAL_FRAMES, generarRutasFrames } from '../../utils/preloadImages';
 gsap.registerPlugin(ScrollTrigger);
 
 export interface SecuenciaCanvasProps {
-  /** Número total de fotogramas (por defecto 78) */
+  /** Número total de fotogramas (por defecto 240) */
   totalFrames?: number;
   /** Imágenes ya precargadas en memoria (opcional) */
   imagenes?: HTMLImageElement[];

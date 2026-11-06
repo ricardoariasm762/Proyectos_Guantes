@@ -30,7 +30,7 @@ export const PracticaGuiada: React.FC = () => {
   const [pasoActivo, setPasoActivo] = useState<number>(1);
   const [frameActual, setFrameActual] = useState<number>(0);
 
-  // Precarga asíncrona de los 78 fotogramas al montar el componente
+  // Precarga asíncrona de los 240 fotogramas al montar el componente
   useEffect(() => {
     let montado = true;
     const rutas = generarRutasFrames(TOTAL_FRAMES);

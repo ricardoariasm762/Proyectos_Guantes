@@ -5,21 +5,21 @@
  * Universidad Cooperativa de Colombia - Campus Pasto
  */
 
-export const TOTAL_FRAMES = 78;
+export const TOTAL_FRAMES = 240;
 
 /**
  * Versión de la secuencia publicada. Los fotogramas se sirven con caché inmutable de un año,
  * por lo que cada secuencia nueva debe ir en una carpeta nueva (v3, v4...) para que
  * CloudFront y los navegadores no muestren la anterior.
  */
-export const FRAMES_VERSION = 'v2';
+export const FRAMES_VERSION = 'v3';
 
 /** Formato de los fotogramas (WebP 1920x1080 generado con scripts/generar-fotogramas.ps1). */
 export const FRAMES_EXT = 'webp';
 
 /**
  * Genera la lista ordenada de URLs para los fotogramas en /frames/<versión>/
- * con el formato frame_001.webp a frame_078.webp.
+ * con el formato frame_001.webp a frame_240.webp.
  */
 export function generarRutasFrames(total: number = TOTAL_FRAMES): string[] {
   const rutas: string[] = [];

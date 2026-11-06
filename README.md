@@ -11,7 +11,7 @@
 **Herramienta Digital Guantes** es una Aplicación Web Progresiva (**PWA**) orientada al entrenamiento, práctica autónoma y evaluación formativa de la **técnica abierta de postura de guantes quirúrgicos estériles** (protocolo clínico de 6 pasos).
 
 El sistema combina:
-- **Práctica Guiada paso a paso** con secuencia animada de 78 fotogramas clínicos precacheados para uso sin conexión tras la primera visita.
+- **Práctica Guiada paso a paso** con secuencia animada de 240 fotogramas clínicos precacheados para uso sin conexión tras la primera visita.
 - **Simulación por Cámara en Tiempo Real** 100 % en el navegador (privacidad total: ningún fotograma ni video sale del dispositivo), extrayendo 21 puntos anatómicos por mano con MediaPipe Hands y evaluando la postura mediante un motor determinista de reglas clínicas y, opcionalmente, un clasificador neuronal en TensorFlow.js.
 - **Simulación Interactiva 2D (Drag & Drop)** y **Modo Desafío contrarreloj** para reforzar zonas estériles y contaminadas.
 - **Seguimiento Docente (`/docente`)** y **Administración (`/admin/usuarios`, `/admin/modelos-ia`, `/recolector`)** conectados a la API REST en Spring Boot.
@@ -180,7 +180,7 @@ Proyectos_Guantes/
 │   ├── train_model.py            # Entrenamiento agrupado por persona y generación de reportes
 │   └── requirements.txt          # Dependencias de Python para entrenamiento offline
 ├── public/
-│   ├── frames/v2/                # 78 fotogramas WebP 1920x1080 del tutorial (ver scripts/generar-fotogramas.ps1)
+│   ├── frames/v3/                # 240 fotogramas WebP 1920x1080 del tutorial (ver scripts/generar-fotogramas.ps1)
 │   ├── models/                   # Tarea MediaPipe (hand_landmarker.task)
 │   ├── modelo_tfjs/              # Modelo TensorFlow.js (model.json + shards binarios)
 │   ├── wasm/                     # Binarios WebAssembly de MediaPipe Tasks Vision
