@@ -4,6 +4,7 @@
 import { api } from './api';
 import type { IntentoPractica } from '../types';
 import { usePracticaStore } from '../store/usePracticaStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 export interface GuardarIntentoParams {
   puntaje: number;
@@ -24,6 +25,7 @@ export const respaldarIntentoLocal = (payload: Record<string, unknown>): void =>
     const previos = JSON.parse(localStorage.getItem(STORAGE_KEY_RESPALDO) || '[]');
     previos.push({
       ...payload,
+      _usuarioId: useAuthStore.getState().usuario?.id ?? null,
       _fechaRespaldo: new Date().toISOString(),
     });
     localStorage.setItem(STORAGE_KEY_RESPALDO, JSON.stringify(previos));
@@ -36,33 +38,160 @@ export const respaldarIntentoLocal = (payload: Record<string, unknown>): void =>
  * Envía el resultado del intento al backend Spring Boot.
  * Si incluirMetadatosIA es verdadero, extrae la telemetría acumulada en el store.
  */
-export const guardarIntento = async (params: GuardarIntentoParams): Promise<IntentoPractica> => {
-  const modoNormalizado = params.modo.toUpperCase() as 'GUIADO' | 'SIMULACION' | 'DESAFIO';
+const MODOS_BACKEND = ['GUIADO', 'EVALUACION', 'LIBRE', 'ENTRENAMIENTO', 'SIMULACION', 'DESAFIO'];
+
+const aNumero = (valor: unknown): number | undefined => {
+  const n = typeof valor === 'number' ? valor : Number(valor);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+/**
+ * Convierte los datos del intento al contrato de IntentoRequest del backend
+ * (modoPractica, duracionSegundos, completado, observaciones).
+ * Acepta también el formato antiguo (modo, tiempoSegundos, errores, pasosCompletados)
+ * para poder sincronizar respaldos guardados antes de esta corrección.
+ */
+export const construirPayloadBackend = (datos: Record<string, unknown>): Record<string, unknown> => {
+  const modoCrudo = String(datos.modoPractica ?? datos.modo ?? 'GUIADO').toUpperCase();
+  const modoPractica = MODOS_BACKEND.includes(modoCrudo) ? modoCrudo : 'GUIADO';
+
+  const puntaje = aNumero(datos.puntaje);
+  const duracionSegundos = aNumero(datos.duracionSegundos ?? datos.tiempoSegundos);
+  const errores = aNumero(datos.errores);
+  const pasosCompletados = aNumero(datos.pasosCompletados);
 
   const payload: Record<string, unknown> = {
+    modoPractica,
+    puntaje: puntaje ?? 0,
+    duracionSegundos: duracionSegundos !== undefined ? Math.round(duracionSegundos) : undefined,
+    completado: datos.completado !== undefined ? Boolean(datos.completado) : true,
+  };
+
+  if (typeof datos.observaciones === 'string' && datos.observaciones.trim()) {
+    payload.observaciones = datos.observaciones;
+  } else if (errores !== undefined || pasosCompletados !== undefined) {
+    payload.observaciones = `Errores: ${errores ?? 0} | Pasos completados: ${pasosCompletados ?? 0}`;
+  }
+
+  // El backend exige confianza entre 0.0 y 1.0; si llega en porcentaje se normaliza
+  let confianza = aNumero(datos.confianzaPromedio);
+  if (confianza !== undefined && confianza > 0) {
+    if (confianza > 1) confianza = confianza / 100;
+    payload.confianzaPromedio = Math.min(1, Math.max(0, Number(confianza.toFixed(4))));
+  }
+  if (datos.fuentePrediccion) payload.fuentePrediccion = datos.fuentePrediccion;
+  if (datos.versionModelo) payload.versionModelo = datos.versionModelo;
+  if (datos.detalleIA) payload.detalleIA = datos.detalleIA;
+  if (Array.isArray(datos.pasos)) payload.pasos = datos.pasos;
+
+  return payload;
+};
+
+export const guardarIntento = async (params: GuardarIntentoParams): Promise<IntentoPractica> => {
+  const datos: Record<string, unknown> = {
     puntaje: params.puntaje,
     tiempoSegundos: params.tiempoSegundos,
     errores: params.errores,
-    modo: modoNormalizado,
+    modo: params.modo,
     pasosCompletados: params.pasosCompletados,
   };
 
   // Si se solicita, añadir metadatos de IA desde el store
   if (params.incluirMetadatosIA) {
     const store = usePracticaStore.getState();
-    payload.confianzaPromedio = store.calcularConfianzaPromedio();
-    payload.fuentePrediccion = store.calcularFuenteDominante();
-    payload.versionModelo = store.versionModeloActiva || localStorage.getItem('versionModeloActiva') || 'v1.0';
-    payload.detalleIA = store.generarDetalleIA();
+    datos.confianzaPromedio = store.calcularConfianzaPromedio();
+    datos.fuentePrediccion = store.calcularFuenteDominante();
+    datos.versionModelo = store.versionModeloActiva || localStorage.getItem('versionModeloActiva') || 'v1.0';
+    datos.detalleIA = store.generarDetalleIA();
   }
 
+  const payload = construirPayloadBackend(datos);
+
   try {
-    const res = await api.post<IntentoPractica>('/api/intentos', payload);
-    return res.data;
+    const res = await api.post<IntentoBackendResponse>('/api/intentos', payload);
+    return mapearIntentoBackend(res.data);
   } catch (error) {
     // Almacenar respaldo local para prevenir pérdida de datos
     respaldarIntentoLocal(payload);
     throw error;
+  }
+};
+
+/** Respuesta de IntentoResponse del backend */
+export interface IntentoBackendResponse {
+  id: number;
+  usuarioId?: number;
+  modoPractica?: string | null;
+  fechaInicio?: string | null;
+  fechaFin?: string | null;
+  puntaje?: number | null;
+  duracionSegundos?: number | null;
+  completado?: boolean | null;
+  observaciones?: string | null;
+  confianzaPromedio?: number | null;
+  fuentePrediccion?: IntentoPractica['fuentePrediccion'] | null;
+  versionModelo?: string | null;
+  detalleIA?: string | null;
+  pasos?: { exitoso?: boolean | null }[] | null;
+}
+
+const extraerEntero = (texto: string | null | undefined, etiqueta: RegExp): number | undefined => {
+  if (!texto) return undefined;
+  const m = texto.match(etiqueta);
+  return m ? Number(m[1]) : undefined;
+};
+
+/**
+ * Convierte un intento del backend al formato que usan el dashboard y el perfil.
+ */
+export const mapearIntentoBackend = (r: IntentoBackendResponse): IntentoPractica => {
+  const modo = String(r.modoPractica ?? 'GUIADO').toLowerCase();
+  const pasos = Array.isArray(r.pasos) ? r.pasos : [];
+  const erroresPasos = pasos.filter((p) => p.exitoso === false).length;
+  return {
+    id: `srv_${r.id}`,
+    fecha: r.fechaFin ?? r.fechaInicio ?? new Date().toISOString(),
+    puntaje: Math.round(Number(r.puntaje ?? 0)),
+    tiempoSegundos: Number(r.duracionSegundos ?? 0),
+    errores: extraerEntero(r.observaciones, /Errores:\s*(\d+)/i) ?? erroresPasos,
+    modo: (['guiado', 'simulacion', 'desafio'].includes(modo) ? modo : 'guiado') as IntentoPractica['modo'],
+    pasosCompletados:
+      extraerEntero(r.observaciones, /Pasos completados:\s*(\d+)/i) ?? pasos.filter((p) => p.exitoso !== false).length,
+    confianzaPromedio: r.confianzaPromedio ?? undefined,
+    fuentePrediccion: r.fuentePrediccion ?? undefined,
+    versionModelo: r.versionModelo ?? undefined,
+    detalleIA: r.detalleIA ?? undefined,
+  };
+};
+
+/**
+ * Historial del usuario autenticado guardado en el servidor (disponible en cualquier dispositivo).
+ */
+export const listarMisIntentos = async (): Promise<IntentoPractica[]> => {
+  const res = await api.get<IntentoBackendResponse[]>('/api/intentos/mis-intentos');
+  const lista = Array.isArray(res.data) ? res.data.map(mapearIntentoBackend) : [];
+  return lista.sort((a, b) => Date.parse(b.fecha) - Date.parse(a.fecha));
+};
+
+/**
+ * Intentos del usuario actual que siguen pendientes de sincronizar en este dispositivo.
+ */
+export const listarPendientesUsuarioActual = (): IntentoPractica[] => {
+  try {
+    const usuarioId = useAuthStore.getState().usuario?.id;
+    const pendientes = JSON.parse(localStorage.getItem(STORAGE_KEY_RESPALDO) || '[]');
+    if (!Array.isArray(pendientes) || usuarioId == null) return [];
+    return pendientes
+      .filter((p: Record<string, unknown>) => p._usuarioId === usuarioId)
+      .map((p: Record<string, unknown>, i: number) => {
+        const payload = construirPayloadBackend(p);
+        return {
+          ...mapearIntentoBackend({ id: i, ...payload, fechaFin: String(p._fechaRespaldo ?? '') || null } as IntentoBackendResponse),
+          id: `pendiente_${i}`,
+        };
+      });
+  } catch {
+    return [];
   }
 };
 
@@ -110,14 +239,22 @@ export const sincronizarIntentosPendientes = async (): Promise<number> => {
     const pendientes: Record<string, unknown>[] = JSON.parse(pendientesRaw);
     if (!Array.isArray(pendientes) || pendientes.length === 0) return 0;
 
+    const usuarioId = useAuthStore.getState().usuario?.id;
+    if (usuarioId == null) return 0;
+
     let sincronizados = 0;
     const restantes: Record<string, unknown>[] = [];
 
     for (const item of pendientes) {
+      // Respaldos sin dueño (versiones anteriores) se descartan para no asignarlos a otro usuario
+      if (item._usuarioId === undefined || item._usuarioId === null) continue;
+      // Respaldos de otro usuario del mismo dispositivo se conservan para su propia sesión
+      if (item._usuarioId !== usuarioId) {
+        restantes.push(item);
+        continue;
+      }
       try {
-        const datos = { ...item };
-        delete datos._fechaRespaldo;
-        await api.post('/api/intentos', datos);
+        await api.post('/api/intentos', construirPayloadBackend(item));
         sincronizados++;
       } catch {
         restantes.push(item);

@@ -1,7 +1,7 @@
 // Dashboard principal del estudiante con métricas en tiempo real y gráficos Recharts
 // Universidad Cooperativa de Colombia - Campus Pasto
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useProgresoStore } from '../store/useProgresoStore';
@@ -42,6 +42,14 @@ const Dashboard: React.FC = () => {
     mejorTiempo,
     rachaActual,
   } = useProgresoStore();
+  const sincronizarConServidor = useProgresoStore((state) => state.sincronizarConServidor);
+
+  // Al entrar al dashboard se refresca el historial desde el servidor
+  useEffect(() => {
+    if (usuario?.id != null) {
+      void sincronizarConServidor(Number(usuario.id));
+    }
+  }, [usuario?.id, sincronizarConServidor]);
 
   const numIntentos = totalIntentos();
   const promPuntaje = promedioPuntaje();

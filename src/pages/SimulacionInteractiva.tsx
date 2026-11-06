@@ -24,6 +24,7 @@ import {
 import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
 import ProgressBar from '../components/ui/ProgressBar';
+import { registrarIntento } from '../services/intentoService';
 
 interface ObjetoArrastrableProps {
   id: string;
@@ -293,6 +294,15 @@ const SimulacionInteractiva: React.FC = () => {
       errores,
       pasosCompletados: 6,
       modo: 'simulacion',
+    });
+
+    // Registrar también en el backend para que el docente lo vea y quede en todos los dispositivos
+    void registrarIntento({
+      puntaje: score,
+      tiempoSegundos: tiempoTotal,
+      errores,
+      pasosCompletados: 6,
+      modo: 'SIMULACION',
     });
 
     try {

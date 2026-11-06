@@ -4,9 +4,20 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { IntentoPractica } from '../types';
+import {
+  listarMisIntentos,
+  listarPendientesUsuarioActual,
+  sincronizarIntentosPendientes,
+} from '../services/intentoService';
 
 interface ProgresoState {
   intentos: IntentoPractica[];
+  /** Usuario dueño del historial en caché; evita mostrar prácticas de otra cuenta en el mismo dispositivo */
+  usuarioId: number | null;
+  sincronizando: boolean;
+  /** Vacía la caché si pertenece a otro usuario y carga el historial real desde el servidor */
+  sincronizarConServidor: (usuarioId: number) => Promise<void>;
+  limpiarCache: () => void;
   agregarIntento: (intento: Omit<IntentoPractica, 'id' | 'fecha'>) => IntentoPractica;
   eliminarIntento: (id: string) => void;
   reiniciarProgreso: () => void;
@@ -22,6 +33,36 @@ export const useProgresoStore = create<ProgresoState>()(
   persist(
     (set, get) => ({
       intentos: [],
+      usuarioId: null,
+      sincronizando: false,
+
+      sincronizarConServidor: async (usuarioId) => {
+        if (get().usuarioId !== usuarioId) {
+          set({ intentos: [], usuarioId });
+        }
+        set({ sincronizando: true });
+        try {
+          await sincronizarIntentosPendientes();
+          const servidor = await listarMisIntentos();
+          const pendientes = listarPendientesUsuarioActual();
+          // Solo se aplica si el usuario no cambió mientras llegaba la respuesta
+          if (get().usuarioId === usuarioId) {
+            set({
+              intentos: [...pendientes, ...servidor].sort(
+                (a, b) => Date.parse(b.fecha) - Date.parse(a.fecha)
+              ),
+            });
+          }
+        } catch (err) {
+          console.warn('No se pudo cargar el historial desde el servidor; se muestra la caché local.', err);
+        } finally {
+          set({ sincronizando: false });
+        }
+      },
+
+      limpiarCache: () => {
+        set({ intentos: [], usuarioId: null });
+      },
 
       agregarIntento: (datos) => {
         const nuevoIntento: IntentoPractica = {
@@ -90,6 +131,7 @@ export const useProgresoStore = create<ProgresoState>()(
     {
       name: 'simulador_progreso_storage',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ intentos: state.intentos, usuarioId: state.usuarioId }),
     }
   )
 );
