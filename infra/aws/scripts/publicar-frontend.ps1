@@ -77,6 +77,7 @@ aws s3 sync "$distDir" "s3://$BucketName" `
     --exclude "workbox-*.js" `
     --cache-control "public, max-age=31536000, immutable" `
     --region "$Region"
+if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: la subida a S3 fallo (revisa la sesion con aws login)." -ForegroundColor Red; exit 1 }
 
 Write-Host "Paso 2/2: Subiendo archivos mutables (index.html, service worker, manifiesto)..." -ForegroundColor Yellow
 aws s3 sync "$distDir" "s3://$BucketName" `
@@ -88,6 +89,7 @@ aws s3 sync "$distDir" "s3://$BucketName" `
     --include "workbox-*.js" `
     --cache-control "no-cache, no-store, must-revalidate" `
     --region "$Region"
+if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: la subida a S3 fallo (revisa la sesion con aws login)." -ForegroundColor Red; exit 1 }
 
 # 4. Ajustar Content-Type de tipos MIME especiales
 Write-Host ""
@@ -140,7 +142,9 @@ $invalidationId = (aws cloudfront create-invalidation `
     --paths "/index.html" "/sw.js" "/registerSW.js" "/manifest.webmanifest" `
     --query "Invalidation.Id" `
     --output text `
-    --region "$Region").Trim()
+    --region "$Region")
+if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: la invalidacion de CloudFront fallo." -ForegroundColor Red; exit 1 }
+$invalidationId = "$invalidationId".Trim()
 
 Write-Host "-> Invalidacion solicitada con ID: $invalidationId" -ForegroundColor Green
 Write-Host ""
