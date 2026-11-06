@@ -8,14 +8,24 @@
 export const TOTAL_FRAMES = 78;
 
 /**
- * Genera la lista ordenada de URLs para los fotogramas en /frames/
- * Admite el formato estándar frame_001.jpg a frame_078.jpg.
+ * Versión de la secuencia publicada. Los fotogramas se sirven con caché inmutable de un año,
+ * por lo que cada secuencia nueva debe ir en una carpeta nueva (v3, v4...) para que
+ * CloudFront y los navegadores no muestren la anterior.
+ */
+export const FRAMES_VERSION = 'v2';
+
+/** Formato de los fotogramas (WebP 1920x1080 generado con scripts/generar-fotogramas.ps1). */
+export const FRAMES_EXT = 'webp';
+
+/**
+ * Genera la lista ordenada de URLs para los fotogramas en /frames/<versión>/
+ * con el formato frame_001.webp a frame_078.webp.
  */
 export function generarRutasFrames(total: number = TOTAL_FRAMES): string[] {
   const rutas: string[] = [];
   for (let i = 1; i <= total; i++) {
     const pad = String(i).padStart(3, '0');
-    rutas.push(`/frames/frame_${pad}.jpg`);
+    rutas.push(`/frames/${FRAMES_VERSION}/frame_${pad}.${FRAMES_EXT}`);
   }
   return rutas;
 }

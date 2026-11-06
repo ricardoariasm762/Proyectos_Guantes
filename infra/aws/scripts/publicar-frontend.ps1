@@ -93,7 +93,7 @@ if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: la subida a S3 fallo (revisa la se
 
 # 4. Ajustar Content-Type de tipos MIME especiales
 Write-Host ""
-Write-Host "Ajustando tipos MIME especificos (.wasm, .task, .webmanifest, .bin)..." -ForegroundColor Yellow
+Write-Host "Ajustando tipos MIME especificos (.wasm, .task, .webmanifest, .bin, .webp)..." -ForegroundColor Yellow
 
 # .webmanifest -> application/manifest+json
 if (Test-Path (Join-Path $distDir "manifest.webmanifest")) {
@@ -121,6 +121,16 @@ aws s3 cp "s3://$BucketName" "s3://$BucketName" `
     --include "*.task" `
     --metadata-directive REPLACE `
     --content-type "application/octet-stream" `
+    --cache-control "public, max-age=31536000, immutable" `
+    --region "$Region" 2>$null | Out-Null
+
+# .webp -> image/webp (fotogramas del tutorial)
+aws s3 cp "s3://$BucketName" "s3://$BucketName" `
+    --recursive `
+    --exclude "*" `
+    --include "*.webp" `
+    --metadata-directive REPLACE `
+    --content-type "image/webp" `
     --cache-control "public, max-age=31536000, immutable" `
     --region "$Region" 2>$null | Out-Null
 

@@ -34,6 +34,10 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const proxyRef = useRef<{ frame: number }>({ frame: 0 });
+  // Lienzo diminuto para el fondo difuminado en pantallas verticales
+  const fondoRef = useRef<HTMLCanvasElement>(
+    Object.assign(document.createElement('canvas'), { width: 32, height: 18 })
+  );
 
   // Refs estables para evitar que actualizaciones de estado en el padre reinicien GSAP
   const onFrameChangeRef = useRef(onFrameChange);
@@ -109,8 +113,17 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
     return { ancho, alto };
   }, []);
 
-  // 2. Función para dibujar el Canvas con efecto "Object-Fit: Cover"
-  const renderFrame = useCallback((index: number) => {
+  // Devuelve el fotograma listo más cercano hacia atrás (o null si aún no hay ninguno)
+  const fotogramaListo = (imgs: HTMLImageElement[], index: number): HTMLImageElement | null => {
+    let i = Math.min(imgs.length - 1, Math.max(0, index));
+    while (i > 0 && !(imgs[i]?.complete && imgs[i].naturalWidth)) i--;
+    const img = imgs[i];
+    return img && img.complete && img.naturalWidth ? img : null;
+  };
+
+  // 2. Dibuja el fotograma con "object-fit: cover". Si la posición es fraccionaria (por ejemplo 12.4),
+  //    funde el fotograma 12 con el 13 al 40 % para que el movimiento se vea continuo con pocos fotogramas.
+  const renderFrame = useCallback((posicion: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -120,29 +133,57 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
     const imgs = imagesRef.current;
     if (!imgs || imgs.length === 0) return;
 
-    // Si el frame pedido aún no llegó, se usa el más cercano ya cargado hacia atrás
-    let safeIndex = Math.min(imgs.length - 1, Math.max(0, Math.floor(index)));
-    while (safeIndex > 0 && !(imgs[safeIndex]?.complete && imgs[safeIndex].naturalWidth)) {
-      safeIndex--;
-    }
-    const img = imgs[safeIndex];
-    if (!img || !img.complete) return;
-    const imgWidth = img.naturalWidth || img.width;
-    const imgHeight = img.naturalHeight || img.height;
-    if (!imgWidth || !imgHeight) return;
+    const base = Math.floor(Math.max(0, posicion));
+    const fraccion = Math.min(1, Math.max(0, posicion - base));
+    const img = fotogramaListo(imgs, base);
+    if (!img) return;
 
     const { ancho: canvasWidth, alto: canvasHeight } = ajustarCanvas(canvas);
     if (!canvasWidth || !canvasHeight) return;
 
-    // 3. Fórmula "Object-Fit: Cover" para llenar la pantalla sin deformar
-    const scale = Math.max(canvasWidth / imgWidth, canvasHeight / imgHeight);
-    const renderWidth = imgWidth * scale;
-    const renderHeight = imgHeight * scale;
-    const x = (canvasWidth - renderWidth) / 2;
-    const y = (canvasHeight - renderHeight) / 2;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
 
+    // En pantallas horizontales se usa "cover". En verticales (teléfonos) "cover" recortaría cerca del 70 %
+    // del ancho y ampliaría la imagen; por eso se muestra al menos el 80 % del ancho sobre un fondo
+    // difuminado del mismo fotograma (miniatura reescalada, sin filtros costosos por cuadro).
+    const vertical = canvasWidth / canvasHeight < 1;
+    const dibujar = (imagen: HTMLImageElement) => {
+      const iw = imagen.naturalWidth;
+      const ih = imagen.naturalHeight;
+      const cover = Math.max(canvasWidth / iw, canvasHeight / ih);
+      if (vertical) {
+        const fondo = fondoRef.current;
+        const fctx = fondo.getContext('2d');
+        if (fctx) {
+          fctx.drawImage(imagen, 0, 0, fondo.width, fondo.height);
+          const fw = iw * cover;
+          const fh = ih * cover;
+          context.drawImage(fondo, (canvasWidth - fw) / 2, (canvasHeight - fh) / 2, fw, fh);
+          context.fillStyle = 'rgba(11, 19, 41, 0.45)';
+          context.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+        const scale = Math.min(cover, canvasWidth / (iw * 0.8));
+        const rw = iw * scale;
+        const rh = ih * scale;
+        context.drawImage(imagen, (canvasWidth - rw) / 2, (canvasHeight - rh) * 0.8, rw, rh);
+        return;
+      }
+      const renderWidth = iw * cover;
+      const renderHeight = ih * cover;
+      context.drawImage(imagen, (canvasWidth - renderWidth) / 2, (canvasHeight - renderHeight) / 2, renderWidth, renderHeight);
+    };
+
+    context.globalAlpha = 1;
     context.clearRect(0, 0, canvasWidth, canvasHeight);
-    context.drawImage(img, x, y, renderWidth, renderHeight);
+    dibujar(img);
+
+    const siguiente = imgs[base + 1];
+    if (fraccion > 0.02 && siguiente?.complete && siguiente.naturalWidth) {
+      context.globalAlpha = fraccion;
+      dibujar(siguiente);
+      context.globalAlpha = 1;
+    }
   }, [ajustarCanvas]);
 
   // 3. Animación GSAP vinculada al scroll mediante el hook useGSAP
@@ -174,7 +215,7 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
               Math.max(0, Math.round(proxy.frame))
             );
 
-            renderFrame(currentFrame);
+            renderFrame(proxy.frame);
 
             if (onFrameChangeRef.current) {
               onFrameChangeRef.current(currentFrame, self.progress);
@@ -185,7 +226,7 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
 
       // Redibuja al cambiar el tamaño; ResizeObserver cubre también cambios de layout (sidebar, rotación)
       const redibujar = () => {
-        renderFrame(Math.min(maxFrame, Math.max(0, Math.round(proxyRef.current.frame))));
+        renderFrame(Math.min(maxFrame, Math.max(0, proxyRef.current.frame)));
       };
       const observer = new ResizeObserver(redibujar);
       observer.observe(canvas);

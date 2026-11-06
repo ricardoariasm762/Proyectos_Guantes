@@ -180,7 +180,7 @@ Proyectos_Guantes/
 │   ├── train_model.py            # Entrenamiento agrupado por persona y generación de reportes
 │   └── requirements.txt          # Dependencias de Python para entrenamiento offline
 ├── public/
-│   ├── frames/                   # 78 fotogramas del tutorial clínico precacheados por la PWA
+│   ├── frames/v2/                # 78 fotogramas WebP 1920x1080 del tutorial (ver scripts/generar-fotogramas.ps1)
 │   ├── models/                   # Tarea MediaPipe (hand_landmarker.task)
 │   ├── modelo_tfjs/              # Modelo TensorFlow.js (model.json + shards binarios)
 │   ├── wasm/                     # Binarios WebAssembly de MediaPipe Tasks Vision
