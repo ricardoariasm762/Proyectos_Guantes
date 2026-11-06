@@ -50,6 +50,7 @@ aws cloudformation deploy `
     --parameter-overrides `
         EC2PublicDns="$EC2PublicDns" `
     --region "$Region"
+if ($LASTEXITCODE -ne 0) { Write-Host "ERROR: el comando de AWS fallo (CloudFormation no pudo crear la pila; revisa los eventos con describe-stack-events)." -ForegroundColor Red; exit 1 }
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Cyan
