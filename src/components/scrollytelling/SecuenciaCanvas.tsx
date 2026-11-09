@@ -166,7 +166,7 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
         const scale = Math.min(cover, canvasWidth / (iw * 0.8));
         const rw = iw * scale;
         const rh = ih * scale;
-        context.drawImage(imagen, (canvasWidth - rw) / 2, (canvasHeight - rh) * 0.8, rw, rh);
+        context.drawImage(imagen, (canvasWidth - rw) / 2, (canvasHeight - rh) * 0.22, rw, rh);
         return;
       }
       const renderWidth = iw * cover;

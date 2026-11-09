@@ -83,20 +83,7 @@ export const TutorialScroll: React.FC = () => {
 
       {/* 2. Barra Superior Flotante de Estado y Progreso (HUD Aséptico) */}
       {!isLoading && (
-        <header
-          style={{
-            position: 'fixed',
-            top: '76px',
-            left: 'calc(1.25rem + 105px)',
-            right: '1.25rem',
-            zIndex: 50,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            pointerEvents: 'none',
-            gap: '1rem',
-          }}
-        >
+        <header className="tutorial-hud-header">
           {/* Badge de Técnica Médica */}
           <div
             style={{
@@ -130,8 +117,8 @@ export const TutorialScroll: React.FC = () => {
             >
               <Camera size={13} />
             </span>
-            <span>Secuencia Fotográfica Apple-Style</span>
-            <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
+            <span className="hud-titulo-largo">Secuencia Fotográfica Apple-Style</span>
+            <span className="hud-titulo-largo" style={{ color: 'rgba(255, 255, 255, 0.3)' }}>•</span>
             <span style={{ color: '#38BDF8', fontWeight: 700 }}>
               Paso {pasoActivo} de 6
             </span>

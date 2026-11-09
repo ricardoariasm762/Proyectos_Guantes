@@ -42,55 +42,18 @@ export const TextosPasos: React.FC<Props> = () => {
         return (
           <section
             key={paso.id}
-            style={{
-              height: '100vh',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end', // Alineado a la derecha para no tapar las manos
-              padding: '0 6% 0 0',
-              boxSizing: 'border-box',
-              position: 'relative',
-            }}
+            className="scrolly-step-section"
           >
             <motion.div
               initial={{ opacity: 0, y: 55, scale: 0.96 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ amount: 0.45 }}
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-              style={{
-                pointerEvents: 'auto',
-                width: '100%',
-                maxWidth: '470px',
-                background: 'rgba(15, 23, 42, 0.88)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                borderRadius: '24px',
-                padding: '2rem',
-                border: '1px solid rgba(56, 189, 248, 0.28)',
-                boxShadow:
-                  '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) inset',
-                color: '#F8FAFC',
-                position: 'relative',
-                overflow: 'hidden',
-                fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-              }}
+              className="scrolly-step-card"
             >
               {/* Número grande de fondo con estilo editorial */}
               <span
-                style={{
-                  position: 'absolute',
-                  right: '1.25rem',
-                  top: '0.2rem',
-                  fontSize: '5.5rem',
-                  fontWeight: 900,
-                  lineHeight: 1,
-                  color: 'rgba(56, 189, 248, 0.08)',
-                  letterSpacing: '-0.05em',
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                  zIndex: 0,
-                }}
+                className="scrolly-step-number"
                 aria-hidden="true"
               >
                 {numeroFormateado}
@@ -155,32 +118,12 @@ export const TextosPasos: React.FC<Props> = () => {
               </div>
 
               {/* Título Principal del Paso */}
-              <h3
-                style={{
-                  fontSize: '1.45rem',
-                  fontWeight: 800,
-                  color: '#FFFFFF',
-                  lineHeight: 1.25,
-                  margin: '0 0 0.75rem 0',
-                  letterSpacing: '-0.02em',
-                  position: 'relative',
-                  zIndex: 1,
-                }}
-              >
+              <h3 className="scrolly-step-title">
                 {paso.titulo}
               </h3>
 
               {/* Descripción Clínica */}
-              <p
-                style={{
-                  fontSize: '0.92rem',
-                  color: '#CBD5E1',
-                  lineHeight: 1.6,
-                  margin: '0 0 1.25rem 0',
-                  position: 'relative',
-                  zIndex: 1,
-                }}
-              >
+              <p className="scrolly-step-desc">
                 {paso.descripcion}
               </p>
 

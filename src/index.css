@@ -1430,6 +1430,82 @@ button {
   }
 }
 
+/* Scrollytelling y Tutorial HUD */
+.tutorial-hud-header {
+  position: fixed;
+  top: 76px;
+  left: calc(1.25rem + 105px);
+  right: 1.25rem;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+  gap: 1rem;
+}
+
+.scrolly-step-section {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 6% 0 0;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.scrolly-step-card {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 470px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24px;
+  padding: 2rem;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  color: #F8FAFC;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.scrolly-step-number {
+  position: absolute;
+  right: 1.25rem;
+  top: 0.2rem;
+  font-size: 5.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(56, 189, 248, 0.08);
+  letter-spacing: -0.05em;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.scrolly-step-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.25;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+
+.scrolly-step-desc {
+  font-size: 0.92rem;
+  color: #CBD5E1;
+  line-height: 1.6;
+  margin: 0 0 1.25rem 0;
+  position: relative;
+  z-index: 1;
+}
+
 /* ==========================================================================
    MEDIA QUERIES (RESPONSIVE)
    ========================================================================== */
@@ -1515,6 +1591,48 @@ button {
 
   .logout-text {
     display: none;
+  }
+
+  /* Scrollytelling y HUD móvil */
+  .tutorial-hud-header {
+    top: 70px;
+    left: 0.75rem;
+    right: 0.75rem;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
+  .scrolly-step-section {
+    padding: 0 0.85rem 1rem 0.85rem;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .scrolly-step-card {
+    max-width: 100%;
+    padding: 1.15rem 1.1rem;
+    border-radius: 18px;
+    max-height: 48svh;
+    overflow-y: auto;
+  }
+
+  .scrolly-step-number {
+    font-size: 3.2rem;
+  }
+
+  .scrolly-step-title {
+    font-size: 1.12rem;
+  }
+
+  .scrolly-step-desc {
+    font-size: 0.84rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .hud-titulo-largo {
+    display: none !important;
   }
 }
 
