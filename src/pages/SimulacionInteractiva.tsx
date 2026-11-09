@@ -3,7 +3,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
+import {
+  DndContext,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  MouseSensor,
+  TouchSensor,
+} from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { useProgresoStore } from '../store/useProgresoStore';
 import { useTimer } from '../hooks/useTimer';
@@ -32,6 +40,8 @@ interface ObjetoArrastrableProps {
   icono: string;
   descripcion: string;
   bloqueado?: boolean;
+  seleccionado?: boolean;
+  onSeleccionar?: () => void;
 }
 
 const ObjetoArrastrable: React.FC<ObjetoArrastrableProps> = ({
@@ -40,6 +50,8 @@ const ObjetoArrastrable: React.FC<ObjetoArrastrableProps> = ({
   icono,
   descripcion,
   bloqueado = false,
+  seleccionado = false,
+  onSeleccionar,
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id,
@@ -59,22 +71,46 @@ const ObjetoArrastrable: React.FC<ObjetoArrastrableProps> = ({
       style={style}
       {...listeners}
       {...attributes}
-      className="draggable-item-card"
+      className={`draggable-item-card ${seleccionado ? 'item-selected-tap' : ''}`}
+      onClick={(e) => {
+        if (!bloqueado && onSeleccionar) {
+          e.stopPropagation();
+          onSeleccionar();
+        }
+      }}
+      role="button"
+      tabIndex={bloqueado ? -1 : 0}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && !bloqueado && onSeleccionar) {
+          e.preventDefault();
+          onSeleccionar();
+        }
+      }}
+      aria-pressed={seleccionado}
     >
       <div
         style={{
-          background: bloqueado ? 'var(--bg-muted)' : '#ffffff',
-          border: isDragging ? '2px solid var(--color-primary)' : '2px solid var(--color-primary-soft)',
+          background: bloqueado ? 'var(--bg-muted)' : seleccionado ? '#f0f9ff' : '#ffffff',
+          border: isDragging
+            ? '2px solid var(--color-primary)'
+            : seleccionado
+            ? '2px solid #0284c7'
+            : '2px solid var(--color-primary-soft)',
           borderRadius: 'var(--radius-md)',
           padding: '0.85rem 1rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.75rem',
-          boxShadow: isDragging ? 'var(--shadow-xl)' : 'var(--shadow-sm)',
+          boxShadow: isDragging
+            ? 'var(--shadow-xl)'
+            : seleccionado
+            ? '0 0 0 3px rgba(56, 189, 248, 0.4), var(--shadow-md)'
+            : 'var(--shadow-sm)',
           userSelect: 'none',
+          minHeight: '44px',
         }}
       >
-        <div style={{ fontSize: '1.75rem' }}>{icono}</div>
+        <div style={{ fontSize: '1.75rem', flexShrink: 0 }}>{icono}</div>
         <div>
           <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--color-primary-dark)' }}>
             {etiqueta}
@@ -95,6 +131,8 @@ interface ZonaObjetivoProps {
   subtitulo: string;
   icono: React.ReactNode;
   estaCalzada?: boolean;
+  seleccionActiva?: boolean;
+  onClickZona?: () => void;
 }
 
 const ZonaObjetivo: React.FC<ZonaObjetivoProps> = ({
@@ -104,16 +142,30 @@ const ZonaObjetivo: React.FC<ZonaObjetivoProps> = ({
   subtitulo,
   icono,
   estaCalzada = false,
+  seleccionActiva = false,
+  onClickZona,
 }) => {
   const { isOver, setNodeRef } = useDroppable({
     id,
   });
 
   const esEsteril = tipo === 'esteril';
+  const destacada = isOver || seleccionActiva;
 
   return (
     <div
       ref={setNodeRef}
+      onClick={() => {
+        if (onClickZona) onClickZona();
+      }}
+      role={seleccionActiva ? 'button' : undefined}
+      tabIndex={seleccionActiva ? 0 : undefined}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && onClickZona) {
+          e.preventDefault();
+          onClickZona();
+        }
+      }}
       style={{
         flex: 1,
         borderRadius: 'var(--radius-lg)',
@@ -121,6 +173,10 @@ const ZonaObjetivo: React.FC<ZonaObjetivoProps> = ({
           isOver
             ? esEsteril
               ? 'var(--color-sterile)'
+              : 'var(--color-contaminated)'
+            : seleccionActiva
+            ? esEsteril
+              ? 'var(--color-primary)'
               : 'var(--color-contaminated)'
             : esEsteril
             ? 'var(--color-sterile-border)'
@@ -130,6 +186,10 @@ const ZonaObjetivo: React.FC<ZonaObjetivoProps> = ({
           ? esEsteril
             ? 'var(--color-sterile-bg)'
             : 'var(--color-contaminated-bg)'
+          : seleccionActiva
+          ? esEsteril
+            ? 'rgba(224, 242, 254, 0.65)'
+            : 'rgba(254, 226, 226, 0.65)'
           : esEsteril
           ? 'rgba(236, 253, 245, 0.45)'
           : 'rgba(254, 242, 242, 0.45)',
@@ -141,7 +201,8 @@ const ZonaObjetivo: React.FC<ZonaObjetivoProps> = ({
         textAlign: 'center',
         transition: 'all 0.15s ease',
         minHeight: '170px',
-        boxShadow: isOver ? 'var(--shadow-md)' : 'none',
+        boxShadow: destacada ? 'var(--shadow-md)' : 'none',
+        cursor: seleccionActiva ? 'pointer' : 'default',
       }}
     >
       <div
@@ -188,12 +249,26 @@ const SimulacionInteractiva: React.FC = () => {
   const [manoDerechaCalzada, setManoDerechaCalzada] = useState(false);
   const [manoIzquierdaCalzada, setManoIzquierdaCalzada] = useState(false);
   const [punosAjustados, setPunosAjustados] = useState(false);
+  const [insumoSeleccionadoId, setInsumoSeleccionadoId] = useState<string | null>(null);
 
   const [errores, setErrores] = useState(0);
   const [mensajeAlerta, setMensajeAlerta] = useState<string | null>(null);
   const [alertaEsError, setAlertaEsError] = useState(false);
   const [modalExito, setModalExito] = useState(false);
   const [puntajeFinal, setPuntajeFinal] = useState(0);
+
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: {
+      distance: 6,
+    },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 120,
+      tolerance: 8,
+    },
+  });
+  const sensors = useSensors(mouseSensor, touchSensor);
 
   const { segundos, iniciar, pausar, reiniciar } = useTimer({
     autoInicio: true,
@@ -204,13 +279,7 @@ const SimulacionInteractiva: React.FC = () => {
     return () => pausar();
   }, [iniciar, pausar]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const arrastradoId = active.id.toString();
-    const destinoId = over.id.toString();
-
+  const ejecutarColocacion = (arrastradoId: string, destinoId: string) => {
     // 1. Detección de contacto con zonas contaminadas
     if (destinoId === 'droppable-zona-contaminada' || destinoId === 'droppable-suelo-quirurgico') {
       soundManager.playError();
@@ -280,6 +349,25 @@ const SimulacionInteractiva: React.FC = () => {
     }
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    setInsumoSeleccionadoId(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    ejecutarColocacion(active.id.toString(), over.id.toString());
+  };
+
+  const handleZonaClick = (destinoId: string) => {
+    if (insumoSeleccionadoId) {
+      ejecutarColocacion(insumoSeleccionadoId, destinoId);
+      setInsumoSeleccionadoId(null);
+    }
+  };
+
+  const handleSeleccionarInsumo = (id: string) => {
+    setInsumoSeleccionadoId((prev) => (prev === id ? null : id));
+  };
+
   const finalizarSimulacion = () => {
     pausar();
     const tiempoTotal = segundos;
@@ -323,6 +411,7 @@ const SimulacionInteractiva: React.FC = () => {
     setManoDerechaCalzada(false);
     setManoIzquierdaCalzada(false);
     setPunosAjustados(false);
+    setInsumoSeleccionadoId(null);
     setErrores(0);
     setMensajeAlerta(null);
     setModalExito(false);
@@ -345,26 +434,26 @@ const SimulacionInteractiva: React.FC = () => {
             </div>
             <h1 className="page-title">Simulación Interactiva Drag & Drop</h1>
             <p className="page-description">
-              Arrastre y calce los guantes quirúrgicos evitando el contacto con cualquier superficie contaminada.
+              Arrastre o toque para seleccionar y calzar los guantes quirúrgicos evitando el contacto con cualquier superficie contaminada.
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#ffffff', padding: '0.5rem 0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-xs)' }}>
+          <div className="simulacion-stats-bar">
+            <div className="simulacion-stat-card">
               <Clock size={18} style={{ color: 'var(--color-primary)' }} />
               <span style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '1.05rem', color: 'var(--color-primary-dark)' }}>
                 {formatearTiempo(segundos)}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: errores > 0 ? 'var(--color-contaminated-bg)' : '#ffffff', padding: '0.5rem 0.9rem', borderRadius: 'var(--radius-md)', border: `1px solid ${errores > 0 ? 'var(--color-contaminated-border)' : 'var(--border-light)'}`, boxShadow: 'var(--shadow-xs)' }}>
+            <div className={`simulacion-stat-card ${errores > 0 ? 'stat-card-error' : ''}`}>
               <ShieldAlert size={18} style={{ color: errores > 0 ? 'var(--color-contaminated)' : 'var(--text-muted)' }} />
               <span style={{ fontWeight: 600, fontSize: '0.9rem', color: errores > 0 ? 'var(--color-contaminated-dark)' : 'var(--text-secondary)' }}>
                 {errores} {errores === 1 ? 'error' : 'errores'}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'var(--color-primary-ice)', padding: '0.5rem 0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-primary-soft)' }}>
+            <div className="simulacion-stat-card stat-card-precision">
               <Sparkles size={18} style={{ color: 'var(--color-primary)' }} />
               <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-primary-dark)' }}>
                 {precisionActual}% Precisión
@@ -413,7 +502,7 @@ const SimulacionInteractiva: React.FC = () => {
       )}
 
       {/* Tablero Háptico con DndContext */}
-      <DndContext onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="simulacion-canvas-board">
           {/* Barra superior de herramientas arrastrables */}
           <div style={{ background: '#f8fafc', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
@@ -422,13 +511,15 @@ const SimulacionInteractiva: React.FC = () => {
               <span>Elementos disponibles en la envoltura estéril:</span>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div className="supplies-cards-wrap">
               <ObjetoArrastrable
                 id="draggable-guante-derecho"
                 etiqueta="Guante Derecho"
                 icono="🧤"
                 descripcion="Pinza sobre cara interna del puño"
                 bloqueado={manoDerechaCalzada}
+                seleccionado={insumoSeleccionadoId === 'draggable-guante-derecho'}
+                onSeleccionar={() => handleSeleccionarInsumo('draggable-guante-derecho')}
               />
 
               <ObjetoArrastrable
@@ -437,6 +528,8 @@ const SimulacionInteractiva: React.FC = () => {
                 icono="🧤"
                 descripcion="Bolsillo estéril bajo el puño"
                 bloqueado={!manoDerechaCalzada || manoIzquierdaCalzada}
+                seleccionado={insumoSeleccionadoId === 'draggable-guante-izquierdo'}
+                onSeleccionar={() => handleSeleccionarInsumo('draggable-guante-izquierdo')}
               />
 
               <ObjetoArrastrable
@@ -445,15 +538,54 @@ const SimulacionInteractiva: React.FC = () => {
                 icono="✨"
                 descripcion="Desdoblar puños sin rozar piel"
                 bloqueado={!manoDerechaCalzada || !manoIzquierdaCalzada || punosAjustados}
+                seleccionado={insumoSeleccionadoId === 'draggable-ajuste-punos'}
+                onSeleccionar={() => handleSeleccionarInsumo('draggable-ajuste-punos')}
               />
             </div>
           </div>
+
+          {/* Notificación didáctica si el modo toque está activo */}
+          {insumoSeleccionadoId && (
+            <div
+              style={{
+                background: '#e0f2fe',
+                borderBottom: '1px solid #bae6fd',
+                color: '#0369a1',
+                padding: '0.55rem 1.25rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.5rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <span>👆 Modo táctil activo: Toca la zona receptora correspondiente para colocarlo.</span>
+              <button
+                type="button"
+                onClick={() => setInsumoSeleccionadoId(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#0369a1',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: '4px',
+                }}
+              >
+                Cancelar selección
+              </button>
+            </div>
+          )}
 
           {/* Superficie de la mesa quirúrgica */}
           <div className="surgical-table-surface" style={{ minHeight: '340px' }}>
             {/* ZONA ESTÉRIL (CAMPO QUIRÚRGICO) */}
             <div className="zone-sterile-area">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <span style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-sterile-dark)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   ✓ CAMPO ESTÉRIL QUIRÚRGICO (ZONA SEGURA)
                 </span>
@@ -461,32 +593,38 @@ const SimulacionInteractiva: React.FC = () => {
               </div>
 
               {/* Objetivos droppables: Manos receptoras */}
-              <div style={{ display: 'flex', gap: '1.25rem', flex: 1 }}>
+              <div className="sterile-droppables-grid">
                 <ZonaObjetivo
                   id="droppable-mano-derecha"
                   tipo="esteril"
                   titulo="Mano Derecha Receptora"
-                  subtitulo="Arrastre aquí el guante derecho"
+                  subtitulo="Arrastre o toque aquí para calzar el guante derecho"
                   icono={<HandMetal size={24} />}
                   estaCalzada={manoDerechaCalzada}
+                  seleccionActiva={insumoSeleccionadoId !== null}
+                  onClickZona={() => handleZonaClick('droppable-mano-derecha')}
                 />
 
                 <ZonaObjetivo
                   id="droppable-mano-izquierda"
                   tipo="esteril"
                   titulo="Mano Izquierda Receptora"
-                  subtitulo="Arrastre aquí el guante izquierdo"
+                  subtitulo="Arrastre o toque aquí para calzar el guante izquierdo"
                   icono={<HandMetal size={24} />}
                   estaCalzada={manoIzquierdaCalzada}
+                  seleccionActiva={insumoSeleccionadoId !== null}
+                  onClickZona={() => handleZonaClick('droppable-mano-izquierda')}
                 />
 
                 <ZonaObjetivo
                   id="droppable-campo-esteril-central"
                   tipo="esteril"
                   titulo="Zona de Ajuste Final"
-                  subtitulo="Suelte aquí para desdoblar puños"
+                  subtitulo="Suelte o toque aquí para desdoblar puños"
                   icono={<CheckCircle2 size={24} />}
                   estaCalzada={punosAjustados}
+                  seleccionActiva={insumoSeleccionadoId !== null}
+                  onClickZona={() => handleZonaClick('droppable-campo-esteril-central')}
                 />
               </div>
             </div>
@@ -499,12 +637,14 @@ const SimulacionInteractiva: React.FC = () => {
                 titulo="Área Contaminada"
                 subtitulo="Borde de mesa / No estéril"
                 icono={<AlertOctagon size={28} />}
+                seleccionActiva={insumoSeleccionadoId !== null}
+                onClickZona={() => handleZonaClick('droppable-zona-contaminada')}
               />
             </div>
           </div>
 
           {/* Barra inferior de suelo/zona bajo cintura */}
-          <div style={{ background: '#f1f5f9', borderTop: '1px solid var(--border-light)', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="simulacion-bottom-bar">
             <div style={{ fontSize: '0.8rem', color: 'var(--color-contaminated-dark)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <AlertOctagon size={16} />
               <span>Zona bajo nivel de cintura: Todo contacto accidental provocará contaminación inmediata.</span>
@@ -519,11 +659,12 @@ const SimulacionInteractiva: React.FC = () => {
                 gap: '0.35rem',
                 background: '#ffffff',
                 border: '1px solid var(--border-strong)',
-                padding: '0.4rem 0.85rem',
+                padding: '0.55rem 0.95rem',
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.82rem',
                 fontWeight: 600,
                 cursor: 'pointer',
+                minHeight: '40px',
               }}
             >
               <RotateCcw size={14} />
@@ -579,7 +720,7 @@ const SimulacionInteractiva: React.FC = () => {
             Has completado la colocación aséptica de ambos guantes quirúrgicos respetando los límites de campo estéril.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', background: 'var(--bg-muted)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '1rem', background: 'var(--bg-muted)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
             <div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>TIEMPO</div>
               <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-primary-dark)', fontFamily: 'monospace' }}>

@@ -1239,6 +1239,72 @@ button {
   cursor: grabbing;
 }
 
+.simulacion-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.simulacion-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #ffffff;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-xs);
+}
+
+.simulacion-stat-card.stat-card-error {
+  background: var(--color-contaminated-bg);
+  border-color: var(--color-contaminated-border);
+}
+
+.simulacion-stat-card.stat-card-precision {
+  background: var(--color-primary-ice);
+  border-color: var(--color-primary-soft);
+}
+
+.supplies-cards-wrap {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sterile-droppables-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  flex: 1;
+  width: 100%;
+}
+
+.simulacion-bottom-bar {
+  background: #f1f5f9;
+  border-top: 1px solid var(--border-light);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.item-selected-tap {
+  animation: pulseTap 1.5s infinite;
+}
+
+@keyframes pulseTap {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
 /* ==========================================================================
    TUTORIAL 3D REALISTA Y CINEMATOGRÁFICO
    ========================================================================== */
@@ -1627,6 +1693,64 @@ button {
 
   .scrolly-step-desc {
     font-size: 0.84rem;
+  }
+
+  /* Simulación Drag & Drop Móvil */
+  .simulacion-stats-bar {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .simulacion-stat-card {
+    flex: 1 1 calc(33.333% - 0.5rem);
+    min-width: 95px;
+    justify-content: center;
+    padding: 0.45rem 0.6rem;
+  }
+
+  .surgical-table-surface {
+    flex-direction: column;
+  }
+
+  .zone-sterile-area {
+    margin: 0.75rem;
+    padding: 0.85rem;
+  }
+
+  .zone-contaminated-area {
+    margin: 0 0.75rem 0.75rem 0.75rem;
+    padding: 0.85rem;
+  }
+
+  .sterile-droppables-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .sterile-droppables-grid > div {
+    min-height: 110px !important;
+  }
+
+  .supplies-cards-wrap {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .draggable-item-card {
+    width: 100%;
+  }
+
+  .simulacion-bottom-bar {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .simulacion-bottom-bar button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
   }
 }
 
