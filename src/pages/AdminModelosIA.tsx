@@ -82,7 +82,7 @@ const AdminModelosIA: React.FC = () => {
   };
 
   return (
-    <div className="admin-modelos-page" style={{ padding: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="admin-modelos-page admin-page-container">
       {/* Encabezado */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -99,25 +99,27 @@ const AdminModelosIA: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={cargar}
-          disabled={cargando}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.5rem 0.9rem',
-            background: '#ffffff',
-            border: '1px solid var(--border-medium)',
-            borderRadius: 'var(--radius-md)',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          <RefreshCw size={16} className={cargando ? 'animate-spin' : ''} />
-          <span>Actualizar lista</span>
-        </button>
+        <div className="admin-header-actions">
+          <button
+            type="button"
+            onClick={cargar}
+            disabled={cargando}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.5rem 0.9rem',
+              background: '#ffffff',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-md)',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <RefreshCw size={16} className={cargando ? 'animate-spin' : ''} />
+            <span>Actualizar lista</span>
+          </button>
+        </div>
       </div>
 
       {/* Alertas */}
@@ -135,7 +137,7 @@ const AdminModelosIA: React.FC = () => {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
+      <div className="admin-modelos-grid">
         {/* Formulario de Registro */}
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>

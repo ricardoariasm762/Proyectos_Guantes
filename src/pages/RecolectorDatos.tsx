@@ -269,16 +269,7 @@ export const RecolectorDatos: React.FC = () => {
   const progresoTotalPct = Math.min(100, Math.round((totalMuestras / metaTotalEsperada) * 100));
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.25rem',
-        maxWidth: '1280px',
-        margin: '0 auto',
-        padding: '1rem',
-      }}
-    >
+    <div className="recolector-page-container">
       {/* ENCABEZADO */}
       <div
         style={{
@@ -304,7 +295,7 @@ export const RecolectorDatos: React.FC = () => {
         </div>
 
         {/* Acciones de exportación / importación */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div className="recolector-header-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             type="file"
             ref={fileInputRef}
@@ -358,7 +349,7 @@ export const RecolectorDatos: React.FC = () => {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
           gap: '1rem',
         }}
       >
@@ -399,14 +390,7 @@ export const RecolectorDatos: React.FC = () => {
       </div>
 
       {/* DISPOSICIÓN PRINCIPAL: CÁMARA (IZQUIERDA) Y CONTROLES (DERECHA) */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(320px, 1.2fr) minmax(320px, 1fr)',
-          gap: '1.5rem',
-          alignItems: 'start',
-        }}
-      >
+      <div className="recolector-main-grid">
         {/* COLUMNA IZQUIERDA: VIDEO CON LANDMARKS Y BOTÓN DE DISPARO */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <VideoCanvas

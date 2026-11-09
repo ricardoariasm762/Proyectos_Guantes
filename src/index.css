@@ -1589,6 +1589,38 @@ button {
   justify-content: flex-end;
 }
 
+/* Admin y Recolector Layout */
+.admin-page-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 0;
+}
+
+.admin-modelos-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.recolector-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+.recolector-main-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.2fr) minmax(320px, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
 /* ==========================================================================
    MEDIA QUERIES (RESPONSIVE)
    ========================================================================== */
@@ -1599,6 +1631,14 @@ button {
   }
 
   .tutorial-3d-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-modelos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recolector-main-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1873,6 +1913,22 @@ button {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 150px;
+  }
+
+  .admin-header-actions,
+  .recolector-header-actions,
+  .perfil-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-header-actions button,
+  .recolector-header-actions button,
+  .perfil-header-actions button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
   }
 }
 

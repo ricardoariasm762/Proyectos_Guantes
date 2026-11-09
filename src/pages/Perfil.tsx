@@ -90,7 +90,7 @@ const Perfil: React.FC = () => {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div className="perfil-header-actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={abrirModalEditar}
@@ -224,7 +224,7 @@ const Perfil: React.FC = () => {
         subtitulo="Registro detallado de todos los intentos almacenados"
         icono={<Clock size={20} />}
         acciones={
-          <div style={{ display: 'flex', gap: '0.35rem' }}>
+          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
             {(['todos', 'guiado', 'simulacion', 'desafio'] as const).map((m) => (
               <button
                 key={m}

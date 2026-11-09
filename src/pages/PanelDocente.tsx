@@ -228,16 +228,18 @@ export const PanelDocente: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void cargarListadoGeneral()}
-          disabled={cargandoLista}
-          className="btn-secondary-outline"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          <RefreshCw size={16} />
-          <span>{cargandoLista ? 'Actualizando…' : 'Actualizar datos'}</span>
-        </button>
+        <div className="admin-header-actions">
+          <button
+            type="button"
+            onClick={() => void cargarListadoGeneral()}
+            disabled={cargandoLista}
+            className="btn-secondary-outline"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <RefreshCw size={16} />
+            <span>{cargandoLista ? 'Actualizando…' : 'Actualizar datos'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Error de red general */}
@@ -301,7 +303,7 @@ export const PanelDocente: React.FC = () => {
         subtitulo="Selecciona un estudiante para inspeccionar sus intentos y errores por paso"
         icono={<Users size={20} />}
         acciones={
-          <div style={{ position: 'relative', minWidth: '240px' }}>
+          <div style={{ position: 'relative', minWidth: 'min(100%, 240px)', width: '100%' }}>
             <Search
               size={16}
               style={{

@@ -134,7 +134,7 @@ export const AdminUsuarios: React.FC = () => {
   };
 
   return (
-    <div className="admin-usuarios-page" style={{ padding: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="admin-usuarios-page admin-page-container">
       {/* Encabezado */}
       <div
         style={{
@@ -170,7 +170,7 @@ export const AdminUsuarios: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div className="admin-header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={cargarUsuarios}
@@ -404,7 +404,8 @@ export const AdminUsuarios: React.FC = () => {
               padding: '0.55rem 0.85rem',
               borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-light)',
-              minWidth: '280px',
+              minWidth: 'min(100%, 240px)',
+              width: '100%',
               flex: '1',
               maxWidth: '450px',
             }}
