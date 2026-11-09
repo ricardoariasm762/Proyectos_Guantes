@@ -33,6 +33,7 @@ import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
 import ProgressBar from '../components/ui/ProgressBar';
 import { registrarIntento } from '../services/intentoService';
+import { procesarColocacion } from '../utils/simulacionInteractivaLogic';
 
 interface ObjetoArrastrableProps {
   id: string;
@@ -280,72 +281,37 @@ const SimulacionInteractiva: React.FC = () => {
   }, [iniciar, pausar]);
 
   const ejecutarColocacion = (arrastradoId: string, destinoId: string) => {
-    // 1. Detección de contacto con zonas contaminadas
-    if (destinoId === 'droppable-zona-contaminada' || destinoId === 'droppable-suelo-quirurgico') {
+    const estadoPrevio = {
+      faseActual,
+      manoDerechaCalzada,
+      manoIzquierdaCalzada,
+      punosAjustados,
+      insumoSeleccionadoId,
+      errores,
+      mensajeAlerta,
+      alertaEsError,
+      simulacionFinalizada: false,
+    };
+
+    const siguiente = procesarColocacion(estadoPrevio, arrastradoId, destinoId);
+
+    if (siguiente.alertaEsError) {
       soundManager.playError();
-      setErrores((prev) => prev + 1);
-      setAlertaEsError(true);
-      setMensajeAlerta(
-        '¡CONTAMINACIÓN INMEDIATA! El insumo tocó una superficie no estéril. En quirófano real, este guante debe desecharse.'
-      );
-      return;
+    } else {
+      soundManager.playSuccess();
     }
 
-    // 2. Lógica para Fase 1: Calzar Guante Derecho
-    if (faseActual === 1) {
-      if (arrastradoId === 'draggable-guante-derecho') {
-        if (destinoId === 'droppable-mano-derecha') {
-          soundManager.playSuccess();
-          setManoDerechaCalzada(true);
-          setFaseActual(2);
-          setAlertaEsError(false);
-          setMensajeAlerta('¡Excelente! Mano derecha calzada tomando únicamente el borde doblado.');
-        } else if (destinoId === 'droppable-mano-izquierda') {
-          soundManager.playError();
-          setErrores((prev) => prev + 1);
-          setAlertaEsError(true);
-          setMensajeAlerta('Error: Intentas calzar el guante derecho en la mano izquierda.');
-        }
-      } else {
-        soundManager.playError();
-        setErrores((prev) => prev + 1);
-        setAlertaEsError(true);
-        setMensajeAlerta('Debes comenzar tomando el guante de tu mano dominante (derecho).');
-      }
-    }
+    setFaseActual(siguiente.faseActual);
+    setManoDerechaCalzada(siguiente.manoDerechaCalzada);
+    setManoIzquierdaCalzada(siguiente.manoIzquierdaCalzada);
+    setPunosAjustados(siguiente.punosAjustados);
+    setErrores(siguiente.errores);
+    setAlertaEsError(siguiente.alertaEsError);
+    setMensajeAlerta(siguiente.mensajeAlerta);
+    setInsumoSeleccionadoId(siguiente.insumoSeleccionadoId);
 
-    // 3. Lógica para Fase 2: Calzar Guante Izquierdo
-    else if (faseActual === 2) {
-      if (arrastradoId === 'draggable-guante-izquierdo') {
-        if (destinoId === 'droppable-mano-izquierda') {
-          soundManager.playSuccess();
-          setManoIzquierdaCalzada(true);
-          setFaseActual(3);
-          setAlertaEsError(false);
-          setMensajeAlerta('¡Perfecto! Mano izquierda calzada con técnica de bolsillo estéril.');
-        } else {
-          soundManager.playError();
-          setErrores((prev) => prev + 1);
-          setAlertaEsError(true);
-          setMensajeAlerta('El guante izquierdo debe calzarse en la mano izquierda receptora.');
-        }
-      }
-    }
-
-    // 4. Lógica para Fase 3: Ajuste de Puños
-    else if (faseActual === 3) {
-      if (arrastradoId === 'draggable-ajuste-punos') {
-        if (destinoId === 'droppable-campo-esteril-central') {
-          soundManager.playSuccess();
-          setPunosAjustados(true);
-          finalizarSimulacion();
-        } else {
-          soundManager.playError();
-          setErrores((prev) => prev + 1);
-          setAlertaEsError(true);
-          setMensajeAlerta('El ajuste de puños debe hacerse en la zona segura estéril sin tocar piel.');
-        }
-      }
+    if (siguiente.simulacionFinalizada) {
+      finalizarSimulacion();
     }
   };
 
@@ -360,7 +326,6 @@ const SimulacionInteractiva: React.FC = () => {
   const handleZonaClick = (destinoId: string) => {
     if (insumoSeleccionadoId) {
       ejecutarColocacion(insumoSeleccionadoId, destinoId);
-      setInsumoSeleccionadoId(null);
     }
   };
 
