@@ -133,15 +133,7 @@ export const SimulacionCamara: React.FC<SimulacionCamaraProps> = ({ onIntentoGua
   return (
     <section className="simulacion-camara" aria-labelledby="titulo-simulacion-camara">
       <header className="simulacion-camara-encabezado">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-          }}
-        >
+        <div className="simulacion-camara-header-bar">
           <h1 id="titulo-simulacion-camara">Simulación por cámara</h1>
           <Badge variant={ia.isIAReady ? 'primary' : 'neutral'} size="sm">
             {ia.isIAReady

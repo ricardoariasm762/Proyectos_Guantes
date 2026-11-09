@@ -32,6 +32,7 @@ export const ControlesSimulacion: React.FC<ControlesSimulacionProps> = ({
       {/* 1. BOTÓN INICIAR PRÁCTICA (PRIMARIO - Visible antes de comenzar) */}
       {!practicaActiva && !practicaCompletada && (
         <button
+          type="button"
           onClick={onIniciar}
           disabled={cargandoIA}
           className="btn-ctrl-primary"
@@ -53,6 +54,7 @@ export const ControlesSimulacion: React.FC<ControlesSimulacionProps> = ({
       {/* 2. BOTÓN PAUSAR / REANUDAR (SECUNDARIO - Durante la práctica) */}
       {practicaActiva && !practicaCompletada && (
         <button
+          type="button"
           onClick={onPausarReanudar}
           className={`btn-ctrl-secondary ${enPausa ? 'active-pause' : ''}`}
         >
@@ -73,6 +75,7 @@ export const ControlesSimulacion: React.FC<ControlesSimulacionProps> = ({
       {/* 3. BOTÓN REINICIAR (PELIGRO/ADVERTENCIA - Durante o después de la práctica) */}
       {(practicaActiva || practicaCompletada) && (
         <button
+          type="button"
           onClick={onReiniciar}
           className="btn-ctrl-danger"
         >
@@ -84,6 +87,7 @@ export const ControlesSimulacion: React.FC<ControlesSimulacionProps> = ({
       {/* 4. BOTÓN FINALIZAR Y GUARDAR (PRIMARIO - Solo si practicaCompletada es true) */}
       {practicaCompletada && (
         <button
+          type="button"
           onClick={onFinalizarGuardar}
           disabled={guardandoResultado}
           className="btn-ctrl-success"
