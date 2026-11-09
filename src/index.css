@@ -772,6 +772,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-bottom: 1.25rem;
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--border-light);
@@ -781,6 +783,8 @@ button {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  flex: 1 1 200px;
 }
 
 .card-header-icon {
@@ -1572,6 +1576,19 @@ button {
   z-index: 1;
 }
 
+/* Modo Desafío */
+.desafio-inicio-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.5rem;
+}
+
+.desafio-footer-action {
+  margin-top: 1.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* ==========================================================================
    MEDIA QUERIES (RESPONSIVE)
    ========================================================================== */
@@ -1834,6 +1851,16 @@ button {
     padding: 0.65rem 0.75rem;
     min-height: 44px;
   }
+
+  .desafio-footer-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .desafio-footer-action button {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1858,6 +1885,11 @@ button {
 @media (max-width: 900px) {
   .hud-pasos-responsive {
     display: none !important;
+  }
+
+  .desafio-inicio-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 }
 

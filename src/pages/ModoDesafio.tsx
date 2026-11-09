@@ -373,7 +373,7 @@ const ModoDesafio: React.FC = () => {
 
       {/* Pantalla Inicial (Instrucciones y Botón Comenzar) */}
       {estadoDesafio === 'inicio' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '1.5rem' }}>
+        <div className="desafio-inicio-grid">
           <Card
             titulo="Instrucciones de la Evaluación"
             subtitulo="Simulación de Examen Práctico Clínico"
@@ -582,7 +582,7 @@ const ModoDesafio: React.FC = () => {
             </div>
 
             {mostrarFeedbackPaso && (
-              <div style={{ marginTop: '1.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <div className="desafio-footer-action">
                 <button
                   type="button"
                   onClick={siguientePregunta}
