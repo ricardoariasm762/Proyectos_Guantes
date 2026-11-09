@@ -51,6 +51,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         </div>
 
         <div
+          className="modal-form-actions"
           style={{
             display: 'flex',
             justifyContent: 'flex-end',

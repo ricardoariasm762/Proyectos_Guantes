@@ -319,6 +319,7 @@ export const UsuarioFormModal: React.FC<UsuarioFormModalProps> = ({
 
         {/* Botones de acción */}
         <div
+          className="modal-form-actions"
           style={{
             display: 'flex',
             justifyContent: 'flex-end',
