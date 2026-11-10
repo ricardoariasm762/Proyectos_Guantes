@@ -1725,10 +1725,12 @@ button {
     gap: 0.4rem;
   }
 
+@media (max-width: 768px) {
   .scrolly-sticky-viewport {
     aspect-ratio: 16 / 9;
     height: auto !important;
   }
+}
 
   .scrolly-steps-overlay {
     position: relative;
