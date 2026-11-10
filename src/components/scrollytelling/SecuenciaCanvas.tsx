@@ -34,10 +34,6 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const proxyRef = useRef<{ frame: number }>({ frame: 0 });
-  // Lienzo diminuto para el fondo difuminado en pantallas verticales
-  const fondoRef = useRef<HTMLCanvasElement>(
-    Object.assign(document.createElement('canvas'), { width: 32, height: 18 })
-  );
 
   // Refs estables para evitar que actualizaciones de estado en el padre reinicien GSAP
   const onFrameChangeRef = useRef(onFrameChange);
@@ -121,8 +117,7 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
     return img && img.complete && img.naturalWidth ? img : null;
   };
 
-  // 2. Dibuja el fotograma con "object-fit: cover". Si la posición es fraccionaria (por ejemplo 12.4),
-  //    funde el fotograma 12 con el 13 al 40 % para que el movimiento se vea continuo con pocos fotogramas.
+  // 2. Dibuja el fotograma con "object-fit: cover" de forma nítida.
   const renderFrame = useCallback((posicion: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -133,9 +128,8 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
     const imgs = imagesRef.current;
     if (!imgs || imgs.length === 0) return;
 
-    const base = Math.floor(Math.max(0, posicion));
-    const fraccion = Math.min(1, Math.max(0, posicion - base));
-    const img = fotogramaListo(imgs, base);
+    const indexExacto = Math.round(Math.max(0, posicion));
+    const img = fotogramaListo(imgs, indexExacto);
     if (!img) return;
 
     const { ancho: canvasWidth, alto: canvasHeight } = ajustarCanvas(canvas);
@@ -144,46 +138,22 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
 
-    // En pantallas horizontales se usa "cover". En verticales (teléfonos) "cover" recortaría cerca del 70 %
-    // del ancho y ampliaría la imagen; por eso se muestra al menos el 80 % del ancho sobre un fondo
-    // difuminado del mismo fotograma (miniatura reescalada, sin filtros costosos por cuadro).
-    const vertical = canvasWidth / canvasHeight < 1;
-    const dibujar = (imagen: HTMLImageElement) => {
-      const iw = imagen.naturalWidth;
-      const ih = imagen.naturalHeight;
-      const cover = Math.max(canvasWidth / iw, canvasHeight / ih);
-      if (vertical) {
-        const fondo = fondoRef.current;
-        const fctx = fondo.getContext('2d');
-        if (fctx) {
-          fctx.drawImage(imagen, 0, 0, fondo.width, fondo.height);
-          const fw = iw * cover;
-          const fh = ih * cover;
-          context.drawImage(fondo, (canvasWidth - fw) / 2, (canvasHeight - fh) / 2, fw, fh);
-          context.fillStyle = 'rgba(11, 19, 41, 0.45)';
-          context.fillRect(0, 0, canvasWidth, canvasHeight);
-        }
-        const scale = Math.min(cover, canvasWidth / (iw * 0.8));
-        const rw = iw * scale;
-        const rh = ih * scale;
-        context.drawImage(imagen, (canvasWidth - rw) / 2, (canvasHeight - rh) * 0.22, rw, rh);
-        return;
-      }
-      const renderWidth = iw * cover;
-      const renderHeight = ih * cover;
-      context.drawImage(imagen, (canvasWidth - renderWidth) / 2, (canvasHeight - renderHeight) / 2, renderWidth, renderHeight);
-    };
-
     context.globalAlpha = 1;
     context.clearRect(0, 0, canvasWidth, canvasHeight);
-    dibujar(img);
 
-    const siguiente = imgs[base + 1];
-    if (fraccion > 0.02 && siguiente?.complete && siguiente.naturalWidth) {
-      context.globalAlpha = fraccion;
-      dibujar(siguiente);
-      context.globalAlpha = 1;
-    }
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    const cover = Math.max(canvasWidth / iw, canvasHeight / ih);
+    const renderWidth = iw * cover;
+    const renderHeight = ih * cover;
+
+    context.drawImage(
+      img,
+      (canvasWidth - renderWidth) / 2,
+      (canvasHeight - renderHeight) / 2,
+      renderWidth,
+      renderHeight
+    );
   }, [ajustarCanvas]);
 
   // 3. Animación GSAP vinculada al scroll mediante el hook useGSAP
@@ -287,19 +257,20 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
 
       {/*
         Contenedor del canvas con fijación Sticky nativa:
-        Garantiza que el lienzo permanezca anclado en pantalla durante todo el scroll
-        sin parpadeos, saltos de layout ni pantallas negras.
+        En móvil, proporción 16:9 debajo del navbar. En desktop, pantalla completa.
       */}
       <div
+        className="scrolly-sticky-viewport"
         style={{
           position: 'sticky',
           top: 0,
           left: 0,
           width: '100%',
-          height: '100svh',
+          aspectRatio: '16/9',
+          maxHeight: '100svh',
           overflow: 'hidden',
           backgroundColor: '#0B1329',
-          zIndex: 1,
+          zIndex: 30,
         }}
       >
         <canvas
@@ -315,12 +286,9 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
       {/* Capa superpuesta para textos, pasos o componentes hijos */}
       {children && (
         <div
+          className="scrolly-steps-overlay"
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
+            position: 'relative',
             zIndex: 10,
             pointerEvents: 'none',
           }}
