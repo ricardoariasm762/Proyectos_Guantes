@@ -1501,6 +1501,43 @@ button {
 }
 
 /* Scrollytelling y Tutorial HUD */
+.scrolly-master-container {
+  position: relative;
+  width: 100%;
+  background-color: #0B1329;
+}
+
+.scrolly-sticky-viewport {
+  position: sticky;
+  top: 64px;
+  left: 0;
+  width: 100%;
+  height: calc(100svh - 64px);
+  overflow: hidden;
+  background-color: #0B1329;
+  z-index: 1;
+}
+
+.scrolly-steps-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.scrolly-steps-list {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  pointer-events: none;
+}
+
 .tutorial-hud-header {
   position: fixed;
   top: 76px;
@@ -1515,12 +1552,12 @@ button {
 }
 
 .scrolly-step-section {
-  height: 100vh;
+  height: calc(100vh - 64px);
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 6% 0 0;
+  padding: 3.5rem 5% 0 0;
   box-sizing: border-box;
   position: relative;
 }
@@ -1716,39 +1753,61 @@ button {
     display: none;
   }
 
-  /* Scrollytelling y HUD móvil */
+  /* Scrollytelling y HUD móvil: Visor 16:9 fijo arriba + Pasos haciendo scroll abajo */
+  .scrolly-master-container {
+    min-height: auto !important;
+  }
+
   .tutorial-hud-header {
     top: 70px;
     left: 0.5rem;
     right: 0.5rem;
-    padding: 0.35rem;
+    padding: 0;
     gap: 0.4rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
   }
 
-@media (max-width: 768px) {
   .scrolly-sticky-viewport {
+    position: sticky;
+    top: 64px;
+    width: 100%;
     aspect-ratio: 16 / 9;
     height: auto !important;
+    z-index: 30;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.28);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
   }
-}
 
   .scrolly-steps-overlay {
     position: relative;
+    top: auto;
+    left: auto;
     width: 100%;
+    height: auto;
+    z-index: 10;
+    padding: 0.75rem 0 2.5rem 0;
+  }
+
+  .scrolly-steps-list {
+    height: auto;
+    gap: 1.25rem;
   }
 
   .scrolly-step-section {
-    padding: 0.5rem;
+    padding: 0.5rem 0.85rem;
     height: auto;
-    min-height: 100svh;
+    min-height: 60svh;
+    align-items: flex-start;
+    justify-content: center;
   }
 
   .scrolly-step-card {
     max-width: 100%;
-    padding: 1rem;
-    border-radius: 16px;
+    padding: 1.2rem 1.1rem;
+    border-radius: 18px;
     max-height: none;
-    overflow-y: visible;
+    overflow: visible;
   }
 
   .scrolly-step-number {
@@ -1756,11 +1815,11 @@ button {
   }
 
   .scrolly-step-title {
-    font-size: 1.12rem;
+    font-size: 1.15rem;
   }
 
   .scrolly-step-desc {
-    font-size: 0.84rem;
+    font-size: 0.85rem;
   }
 
   /* Simulación Drag & Drop Móvil */

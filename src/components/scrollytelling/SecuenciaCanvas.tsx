@@ -176,7 +176,7 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
         ease: 'none',
         scrollTrigger: {
           trigger: container,
-          start: 'top top',
+          start: 'top 64px',
           end: 'bottom bottom',
           scrub: 0.5,
           onUpdate: (self) => {
@@ -213,12 +213,9 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full"
+      className="scrolly-master-container"
       style={{
-        position: 'relative',
-        width: '100%',
         minHeight: alturaScroll,
-        backgroundColor: '#0B1329',
       }}
     >
       {/* Pantalla de carga mientras se preparan los fotogramas */}
@@ -257,21 +254,9 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
 
       {/*
         Contenedor del canvas con fijación Sticky nativa:
-        En móvil, proporción 16:9 debajo del navbar. En desktop, pantalla completa.
+        Anclado exactamente debajo del navbar (top: 64px) para que no se desplace ni quede oculto bajo el header.
       */}
-      <div
-        className="scrolly-sticky-viewport"
-        style={{
-          position: 'sticky',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100svh',
-          overflow: 'hidden',
-          backgroundColor: '#0B1329',
-          zIndex: 30,
-        }}
-      >
+      <div className="scrolly-sticky-viewport">
         <canvas
           ref={canvasRef}
           style={{
@@ -282,16 +267,9 @@ export const SecuenciaCanvas: React.FC<SecuenciaCanvasProps> = ({
         />
       </div>
 
-      {/* Capa superpuesta para textos, pasos o componentes hijos */}
+      {/* Capa para textos y tarjetas de pasos (superpuesta a la derecha en PC, flujo inferior en celular) */}
       {children && (
-        <div
-          className="scrolly-steps-overlay"
-          style={{
-            position: 'relative',
-            zIndex: 10,
-            pointerEvents: 'none',
-          }}
-        >
+        <div className="scrolly-steps-overlay">
           {children}
         </div>
       )}

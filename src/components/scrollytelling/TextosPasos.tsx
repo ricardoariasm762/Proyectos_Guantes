@@ -22,19 +22,7 @@ interface Props {
  */
 export const TextosPasos: React.FC<Props> = () => {
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 10,
-        pointerEvents: 'none',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <div className="scrolly-steps-list">
       {PASOS_TECNICA.map((paso, index) => {
         const numeroPaso = index + 1;
         const numeroFormateado = `0${numeroPaso}`;
